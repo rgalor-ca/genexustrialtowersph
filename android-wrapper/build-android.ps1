@@ -4,7 +4,8 @@ param(
     [string]$PlatformVersion = "android-36.1",
     [string]$PackageName = "com.openai.towers",
     [string]$ActivityName = "com.openai.towers.MainActivity",
-    [string]$OutputApk = "build\Towers-debug.apk"
+    [string]$OutputApk = "build\Towers-debug.apk",
+    [switch]$SkipInstall
 )
 
 $ErrorActionPreference = "Stop"
@@ -54,7 +55,6 @@ $zipalign = Join-Path $SdkRoot "build-tools\$BuildToolsVersion\zipalign.exe"
 $apksigner = Join-Path $SdkRoot "build-tools\$BuildToolsVersion\apksigner.bat"
 $adb = Join-Path $SdkRoot "platform-tools\adb.exe"
 $manifest = Join-Path $projectRoot "AndroidManifest.xml"
-$assetsDir = Join-Path $projectRoot "assets"
 $sources = Get-ChildItem -Path (Join-Path $projectRoot "src") -Recurse -Filter *.java | Select-Object -ExpandProperty FullName
 $keystore = "C:\Users\raymo\.android\debug.keystore"
 
@@ -70,7 +70,7 @@ try {
 } finally {
     Pop-Location
 }
-Invoke-Native $aapt2 @("link", "--manifest", $manifest, "-I", $androidJar, "-A", $assetsDir, "-o", $unsignedApk)
+Invoke-Native $aapt2 @("link", "--manifest", $manifest, "-I", $androidJar, "-o", $unsignedApk)
 Invoke-Native "cmd.exe" @("/c", """$d8"" --lib ""$androidJar"" --output ""$dexDir"" ""$classesJar""")
 Push-Location $dexDir
 try {
@@ -81,7 +81,13 @@ try {
 Invoke-Native $zipalign @("-f", "4", $unsignedApk, $alignedApk)
 Invoke-Native "cmd.exe" @("/c", """$apksigner"" sign --ks ""$keystore"" --ks-key-alias androiddebugkey --ks-pass pass:android --key-pass pass:android --out ""$signedApk"" ""$alignedApk""")
 
-Invoke-Native $adb @("install", "-r", $signedApk)
-Invoke-Native $adb @("shell", "am", "start", "-n", "$PackageName/$ActivityName")
+if (-not $SkipInstall) {
+    Invoke-Native $adb @("install", "-r", $signedApk)
+    Invoke-Native $adb @("shell", "am", "start", "-n", "$PackageName/$ActivityName")
+}
 
-Write-Output "APK built and launched: $signedApk"
+if ($SkipInstall) {
+    Write-Output "APK built: $signedApk"
+} else {
+    Write-Output "APK built and launched: $signedApk"
+}

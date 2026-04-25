@@ -25,4 +25,10 @@ cd android-wrapper
 .\build-android.ps1
 ```
 
+Build only, without installing to an emulator:
+
+```powershell
+.\build-android.ps1 -SkipInstall
+```
+
 The script expects Android SDK build tools and Android Studio's bundled JBR at the local paths defined at the top of `build-android.ps1`.
