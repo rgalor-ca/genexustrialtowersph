@@ -1,0 +1,26 @@
+# Local OS/editor state
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.err
+tmp*/
+temp*/
+_chrome*/
+*_profile*/
+
+# Android generated output
+android-wrapper/build/
+*.idsig
+
+# GeneXus local generated workspaces
+*.gxc
+*.gxw
+*.gxz
+NetModel/
+GXmetadata/
+GXSPC*

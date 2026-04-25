@@ -1,0 +1,1839 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Towers Philippine Coverage Dashboard</title>
+<style>
+:root{
+  --bg:#060b16;
+  --panel-soft:rgba(9,20,40,.88);
+  --line:rgba(110,182,255,.16);
+  --text:#eff7ff;
+  --muted:#92abcc;
+  --online:#52f3c6;
+  --degraded:#ffc861;
+  --offline:#ff7e7e;
+  --maintenance:#8eb7ff;
+  --scroll-track:rgba(15,29,56,.96);
+  --scroll-thumb:linear-gradient(180deg,#4cc8ff,#6ef2c4);
+}
+*{box-sizing:border-box}
+html,body{
+  height:100%;
+  margin:0;
+  padding:0;
+  background:radial-gradient(circle at top,#17345f 0%,#0a1428 45%,#060b16 100%);
+  font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+  color:var(--text);
+  overflow:hidden;
+}
+body{padding:10px}
+html.modal-open,body.modal-open{overflow:hidden;height:100dvh;overscroll-behavior:none}
+body.modal-open{position:fixed;inset:0;width:100%}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.shell,.card,.panel,.hero,.snapshot,.ops-panel,.map-panel,.registry-panel,.kpis,.registry-list,.form-grid{min-width:0;min-height:0}
+.shell{
+  display:grid;
+  grid-template-columns:minmax(300px,.9fr) minmax(460px,1.14fr) minmax(320px,.9fr);
+  grid-template-rows:repeat(2,minmax(0,1fr));
+  grid-template-areas:
+    'hero map ops'
+    'snapshot map registry';
+  gap:12px;
+  height:calc(100vh - 20px);
+  max-height:calc(100vh - 20px);
+}
+.card,.panel{
+  background:var(--panel-soft);
+  border:1px solid var(--line);
+  border-radius:24px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 18px 40px rgba(0,0,0,.24);
+}
+.card{
+  padding:18px;
+  position:relative;
+  overflow:hidden;
+}
+.card::before{
+  content:'';
+  position:absolute;
+  right:-70px;
+  bottom:-70px;
+  width:180px;
+  height:180px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(86,190,255,.28) 0%,rgba(86,190,255,0) 72%);
+}
+.hero{grid-area:hero;display:grid;gap:7px;align-content:start;padding-bottom:38px}
+.ops-panel{grid-area:ops;display:flex;flex-direction:column;padding:18px}
+.map-panel{grid-area:map;display:flex;flex-direction:column;padding:18px}
+.snapshot{grid-area:snapshot;display:grid;gap:7px;align-content:space-between;padding:18px 18px 28px}
+.registry-panel{grid-area:registry;display:flex;flex-direction:column;padding:18px}
+.ops-panel .panel-sub{font-size:11px;line-height:1.35}
+.ops-panel .form-grid{gap:7px 8px}
+.ops-panel label{gap:4px;font-size:10px}
+.ops-panel input,.ops-panel select{min-height:34px;padding:7px 11px}
+.ops-panel #towerContactDate,.ops-panel #towerContactTime{font-size:12px}
+.ops-panel .actions{margin-top:28px;padding-top:22px;border-top:1px solid rgba(110,182,255,.12)}
+.ops-panel .primary,.ops-panel .secondary{padding:9px 10px}
+.ops-panel .field-note{margin-top:2px}
+.eyebrow{
+  display:inline-flex;
+  width:max-content;
+  padding:7px 12px;
+  border-radius:999px;
+  border:1px solid rgba(95,196,255,.18);
+  background:rgba(74,198,255,.12);
+  color:#95e6ff;
+  font-size:11px;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+}
+h1{
+  margin:10px 0 8px;
+  font-size:clamp(24px,2.05vw,36px);
+  line-height:1.02;
+  overflow-wrap:anywhere;
+}
+.title-mobile{display:none}
+.copy{max-width:none;color:var(--muted);line-height:1.45;font-size:13px}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;min-height:auto}
+.kpi{
+  padding:8px 12px;
+  border-radius:18px;
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.06);
+}
+.kpi span{display:block}
+.kpi-label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#89a4c9;margin-bottom:5px}
+.kpi-value{font-size:21px;font-weight:700}
+.detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-content:start;margin-top:4px;min-height:auto;padding-bottom:14px}
+.detail-card{
+  padding:7px 12px;
+  min-height:44px;
+  border-radius:18px;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.06);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.detail-label{
+  display:block;
+  font-size:10px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:#89a4c9;
+  margin-bottom:5px;
+}
+.detail-value{
+  display:block;
+  font-size:14px;
+  font-weight:700;
+  line-height:1.18;
+  color:#eff7ff;
+  overflow-wrap:anywhere;
+}
+.hero > :last-child,.snapshot > :last-child{margin-bottom:0}
+.panel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:10px}
+.panel-head h2{margin:0;font-size:18px}
+.panel-sub{color:#87a1c3;font-size:12px;line-height:1.45;max-width:420px}
+.line{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 13px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05)}
+.meter{height:8px;border-radius:999px;background:#0d1a31;overflow:hidden;border:1px solid rgba(255,255,255,.06)}
+.meter span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#42f4c5,#4bbcff)}
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.pill{display:inline-flex;align-items:center;justify-content:center;padding:7px 12px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border:1px solid transparent;white-space:nowrap}
+.pill.online{background:rgba(61,223,160,.12);border-color:rgba(61,223,160,.24);color:#6ff0ba}
+.pill.degraded{background:rgba(255,190,83,.12);border-color:rgba(255,190,83,.24);color:#ffc868}
+.pill.offline{background:rgba(255,107,107,.12);border-color:rgba(255,107,107,.24);color:#ff9d9d}
+.pill.maintenance{background:rgba(103,173,255,.12);border-color:rgba(103,173,255,.24);color:#9bc5ff}
+.map-shell{
+  flex:1;
+  min-height:0;
+  background:
+    radial-gradient(circle at 50% 52%,rgba(69,122,214,.22) 0%,rgba(69,122,214,0) 44%),
+    linear-gradient(180deg,#0b1730 0%,#08111f 100%);
+  border-radius:22px;
+  border:1px solid rgba(123,180,255,.1);
+  padding:14px;
+  position:relative;
+  overflow:hidden;
+}
+svg{width:100%;height:100%;display:block}
+.ph-outline{fill:#20496d;stroke:#7de9ff;stroke-width:6;stroke-linejoin:round}
+.zone-hotspot,.zone-hit,.zone-core,.zone-label,.zone-sub{cursor:pointer;touch-action:manipulation}
+.zone-hit{fill:rgba(88,210,255,.08);stroke:rgba(122,230,255,.24);stroke-width:2;transition:transform .16s ease,fill .16s ease,stroke .16s ease}
+.zone-core{fill:#dff8ff;stroke:#52c4ff;stroke-width:4;transform-box:fill-box;transform-origin:center;animation:zonePulse 2.8s ease-in-out infinite}
+.zone-hotspot:hover .zone-hit,.zone-hotspot:focus .zone-hit,.zone-hotspot.is-active .zone-hit{fill:rgba(88,210,255,.18);stroke:rgba(122,230,255,.45)}
+.zone-hotspot:focus{outline:none}
+.zone-label,.zone-sub{paint-order:stroke;stroke:rgba(6,14,28,.96);stroke-linejoin:round}
+.zone-label{font-size:16px;font-weight:700;fill:#dff7ff;letter-spacing:.08em;stroke-width:6}
+.zone-sub{font-size:11px;fill:#9fd6ff;letter-spacing:.12em;text-transform:uppercase;stroke-width:4;font-weight:600}
+.tower-line{stroke-width:4;stroke-linecap:round}
+.tower-callout{fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;opacity:.92}
+.tower-tag{fill:rgba(7,16,32,.9);stroke:rgba(126,233,255,.18);stroke-width:1.4}
+.tower-base{fill:#eff7ff}
+.tower-top{stroke-width:4;fill:#08111f;transform-box:fill-box;transform-origin:center}
+.tower-pulse{fill:none;stroke-width:2.25;opacity:0;transform-box:fill-box;transform-origin:center}
+.tower-wave{fill:none;stroke-width:3;opacity:.85}
+.tower-label,.tower-type{paint-order:stroke;stroke:#08111f;stroke-width:5;stroke-linejoin:round}
+.tower-label{font-size:12px;fill:#eff7ff;font-weight:600}
+.tower-type{font-size:10px;fill:#8fb1d8}
+.status-online .tower-line,.status-online .tower-top,.status-online .tower-wave,.status-online .tower-callout{stroke:var(--online)}
+.status-online .tower-pulse{stroke:rgba(82,243,198,.85)}
+.status-online .tower-base{fill:var(--online)}
+.status-degraded .tower-line,.status-degraded .tower-top,.status-degraded .tower-wave,.status-degraded .tower-callout{stroke:var(--degraded)}
+.status-degraded .tower-pulse{stroke:rgba(255,200,104,.82)}
+.status-degraded .tower-base{fill:var(--degraded)}
+.status-offline .tower-line,.status-offline .tower-top,.status-offline .tower-wave,.status-offline .tower-callout{stroke:var(--offline)}
+.status-offline .tower-pulse{stroke:rgba(255,157,157,.76)}
+.status-offline .tower-base{fill:var(--offline)}
+.status-maintenance .tower-line,.status-maintenance .tower-top,.status-maintenance .tower-wave,.status-maintenance .tower-callout{stroke:var(--maintenance)}
+.status-maintenance .tower-pulse{stroke:rgba(155,197,255,.82)}
+.status-maintenance .tower-base{fill:var(--maintenance)}
+.status-online .tower-top,.status-online .tower-wave{animation:signalBlink 1.7s ease-in-out infinite}
+.status-degraded .tower-top,.status-degraded .tower-wave{animation:signalBlink 2.3s ease-in-out infinite}
+.status-maintenance .tower-top,.status-maintenance .tower-wave{animation:signalBlink 2.9s ease-in-out infinite}
+.status-online .tower-pulse{animation:signalRing 1.7s ease-out infinite}
+.status-degraded .tower-pulse{animation:signalRing 2.3s ease-out infinite}
+.status-maintenance .tower-pulse{animation:signalRing 2.9s ease-out infinite}
+@keyframes signalBlink{
+  0%,100%{opacity:.45}
+  50%{opacity:1}
+}
+@keyframes signalRing{
+  0%{opacity:0;transform:scale(.7)}
+  18%{opacity:.9}
+  100%{opacity:0;transform:scale(2.25)}
+}
+@keyframes zonePulse{
+  0%,100%{opacity:.9;transform:scale(1)}
+  50%{opacity:.58;transform:scale(1.14)}
+}
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+label{display:grid;gap:6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#90aacd;min-width:0}
+.span-2{grid-column:span 2}
+.dual-inputs{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.85fr);gap:8px}
+.field-note{font-size:10px;letter-spacing:0;text-transform:none;color:#6f8db5}
+input,select{width:100%;max-width:100%;min-width:0;padding:10px 12px;border-radius:14px;border:1px solid rgba(124,175,255,.18);background:rgba(4,12,27,.86);color:var(--text);outline:none}
+input[type="date"],input[type="time"]{display:block;box-sizing:border-box;width:100%;max-width:100%;min-width:0;inline-size:100%;max-inline-size:100%;overflow:hidden;-webkit-appearance:none;appearance:none}
+#towerContactDate,#towerContactTime{font-size:14px;letter-spacing:0}
+.datetime-field{display:block;min-width:0;width:100%;max-width:100%;overflow:hidden}
+.datetime-field input{display:block;box-sizing:border-box;width:100%;max-width:100%;min-width:0;min-inline-size:0;max-inline-size:100%}
+.datetime-field input::-webkit-datetime-edit{padding:0}
+input:focus,select:focus{border-color:#58d2ff;box-shadow:0 0 0 3px rgba(88,210,255,.12)}
+.actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:24px;padding-top:16px;align-items:stretch}
+.primary,.secondary{border-radius:12px;padding:10px 12px;font-size:13px;font-weight:700}
+.primary{background:linear-gradient(135deg,#57c9ff,#6ef2c4);color:#04101f;border:0}
+.secondary{background:rgba(255,255,255,.06);color:#d7e7ff;border:1px solid rgba(255,255,255,.08)}
+.actions .primary,.actions .secondary{width:100%;min-width:0}
+.footnote{margin-top:10px;color:#6f8db5;font-size:12px;line-height:1.45}
+.toast-stack{position:fixed;left:12px;right:12px;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px;z-index:80;pointer-events:none;width:auto;max-width:360px;margin:0 auto}
+.toast{opacity:0;transform:translateY(12px);transition:opacity .2s ease,transform .2s ease;padding:12px 14px;border-radius:16px;background:rgba(8,18,36,.96);border:1px solid rgba(110,182,255,.18);box-shadow:0 18px 40px rgba(0,0,0,.34);color:#e9f6ff;font-size:13px;line-height:1.4}
+.toast.is-visible{opacity:1;transform:translateY(0)}
+.toast.toast-success{border-color:rgba(82,243,198,.28);box-shadow:0 18px 40px rgba(0,0,0,.34),0 0 0 1px rgba(82,243,198,.08)}
+.toast.toast-error{border-color:rgba(255,126,126,.32);box-shadow:0 18px 40px rgba(0,0,0,.34),0 0 0 1px rgba(255,126,126,.1);color:#ffd7d7}
+.registry-list{display:flex;flex-direction:column;gap:10px;align-items:stretch;overflow:auto;overflow-x:hidden;padding-right:10px;flex:1;scrollbar-width:thin;scrollbar-color:#58cfff var(--scroll-track);scrollbar-gutter:stable}
+.registry-list::-webkit-scrollbar{width:12px}
+.registry-list::-webkit-scrollbar-track{background:var(--scroll-track);border-radius:999px;border:1px solid rgba(116,173,255,.08)}
+.registry-list::-webkit-scrollbar-thumb{background:var(--scroll-thumb);border-radius:999px;border:2px solid var(--scroll-track);box-shadow:0 0 18px rgba(88,207,255,.35)}
+.registry-list::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,#7fddff,#79ffd5)}
+.registry-item{
+  display:flex;
+  flex-direction:column;
+  flex:0 0 auto;
+  gap:12px;
+  padding:14px;
+  border-radius:18px;
+  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02)),rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.06);
+  position:relative;
+  overflow:hidden;
+}
+.registry-item::before{content:'';position:absolute;left:0;top:16px;bottom:16px;width:3px;border-radius:999px;background:linear-gradient(180deg,#49c0ff,#6ef2c4);opacity:.78}
+.registry-item > *{position:relative;z-index:1}
+.registry-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:10px;min-width:0}
+.registry-copy{min-width:0}
+.registry-name{font-size:15px;font-weight:700;color:#eff7ff;overflow-wrap:anywhere}
+.registry-meta,.registry-contact{color:#8fb1d8;font-size:12px;line-height:1.45;overflow-wrap:anywhere}
+.registry-contact{color:#6f8db5}
+.registry-top .pill{flex:0 0 auto}
+.registry-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.registry-actions button{padding:8px 10px;border-radius:10px;font-size:12px}
+.empty{padding:24px;text-align:center;color:#90aacd;border-radius:18px;background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.08)}
+.modal-shell[hidden]{display:none}
+.modal-shell{position:fixed;inset:0;z-index:20;padding:24px;width:100vw;height:100vh;height:100dvh;overflow:hidden;display:grid;place-items:center}
+.modal-backdrop{position:absolute;inset:0;background:rgba(4,10,22,.72);backdrop-filter:blur(10px)}
+.modal-card{position:relative;z-index:1;width:min(420px,calc(100vw - 48px));max-width:100%;max-height:calc(100dvh - 48px);padding:20px;border-radius:24px;background:rgba(8,18,36,.96);border:1px solid rgba(110,182,255,.18);box-shadow:0 22px 60px rgba(0,0,0,.45);display:flex;flex-direction:column;justify-content:center;overflow:hidden}
+.modal-close{position:absolute;top:14px;right:14px;display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:999px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#d5e7ff;padding:0;font-size:0;line-height:1;cursor:pointer}
+.modal-close::before{content:"\00d7";font-size:24px;line-height:1;color:#d5e7ff;font-weight:700}
+.modal-eyebrow{color:#95e6ff;font-size:11px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:12px}
+.modal-card h3{margin:0 0 8px;font-size:28px}
+.modal-copy{color:#8fb1d8;font-size:13px;line-height:1.55}
+.modal-stats{margin-top:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.modal-stat{padding:12px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)}
+.modal-stat span{display:block;color:#85a5ce;font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+.modal-stat strong{display:block;font-size:22px}
+.modal-focus{margin-top:14px;padding:14px;border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.06)}
+.modal-focus-title{color:#95e6ff;font-size:11px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:6px}
+.modal-focus-name{font-size:18px;font-weight:700;margin-bottom:4px}
+.modal-focus-meta{color:#8fb1d8;font-size:13px;line-height:1.45}
+@media (max-width:1500px){
+  body{padding:8px}
+  .shell{
+    gap:10px;
+    grid-template-columns:minmax(280px,.88fr) minmax(410px,1.14fr) minmax(290px,.88fr);
+    grid-template-rows:repeat(2,minmax(0,1fr));
+    height:calc(100dvh - 16px);
+    max-height:calc(100dvh - 16px);
+  }
+  .panel,.card,.snapshot,.ops-panel,.map-panel,.registry-panel{padding:16px}
+  .hero{gap:6px;padding-bottom:38px}
+  .snapshot{gap:6px;padding:16px 16px 28px}
+  h1{font-size:clamp(22px,2vw,32px);margin:10px 0 8px}
+  .copy,.panel-sub{font-size:12px;line-height:1.35}
+  .kpis{gap:8px}
+  .kpi{padding:8px 11px}
+  .kpi-label{margin-bottom:6px}
+  .kpi-value{font-size:20px}
+  .detail-grid{gap:8px;margin-top:2px}
+  .detail-card{padding:6px 10px;min-height:39px}
+  .detail-value{font-size:13px}
+  .line{padding:8px 11px}
+  .pills{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  .pill{width:100%;padding:5px 6px;font-size:9px;letter-spacing:.04em}
+  .panel-head{gap:10px;margin-bottom:7px}
+  .panel-head h2{font-size:17px}
+  .form-grid{gap:8px}
+  label{gap:4px;font-size:10px}
+  input,select{padding:9px 11px;border-radius:12px}
+  .ops-panel input,.ops-panel select{min-height:32px;padding:7px 10px}
+  .ops-panel .actions{margin-top:28px;padding-top:22px}
+  .primary,.secondary{padding:9px 10px;font-size:12px}
+  .actions .primary,.actions .secondary{min-width:124px}
+  .footnote{margin-top:8px;font-size:11px;line-height:1.35}
+  .registry-item{gap:10px;padding:12px}
+  .registry-name{font-size:14px}
+  .registry-meta,.registry-contact{font-size:11px}
+  .registry-actions button{padding:7px 9px;font-size:11px}
+}
+@media (max-height:920px) and (min-width:1261px){
+  body{padding:8px}
+  .shell{
+    gap:10px;
+    grid-template-rows:repeat(2,minmax(0,1fr));
+    height:calc(100dvh - 16px);
+    max-height:calc(100dvh - 16px);
+  }
+  .eyebrow{padding:6px 11px;font-size:10px}
+  .hero{gap:5px;padding-bottom:28px}
+  .panel,.card,.snapshot,.ops-panel,.map-panel,.registry-panel{padding:16px}
+  .snapshot{gap:6px;padding:16px 16px 28px}
+  h1{font-size:clamp(22px,1.75vw,30px);margin:8px 0 6px}
+  .copy{font-size:11px;line-height:1.32}
+  .panel-sub{font-size:12px;line-height:1.35}
+  .kpis{gap:7px}
+  .kpi{padding:6px 10px}
+  .kpi-label{font-size:9px;margin-bottom:4px}
+  .kpi-value{font-size:19px}
+  .detail-grid{gap:7px;margin-top:1px;padding-bottom:18px}
+  .detail-card{padding:5px 10px;min-height:36px}
+  .detail-label{font-size:9px;margin-bottom:4px}
+  .detail-value{font-size:12px}
+  .line{padding:8px 11px}
+  .pills{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  .pill{width:100%;padding:5px 6px;font-size:9px;letter-spacing:.04em}
+  .panel-head{gap:10px;margin-bottom:7px}
+  .panel-head h2{font-size:17px}
+  .form-grid{gap:8px}
+  label{gap:4px;font-size:10px}
+  input,select{padding:9px 11px;border-radius:12px}
+  .ops-panel input,.ops-panel select{min-height:32px;padding:7px 10px}
+  .ops-panel .actions{margin-top:28px;padding-top:22px}
+  .primary,.secondary{padding:9px 10px;font-size:12px}
+  .actions .primary,.actions .secondary{min-width:124px}
+  .footnote{margin-top:8px;font-size:11px;line-height:1.35}
+  .registry-item{gap:10px;padding:12px}
+  .registry-name{font-size:14px}
+  .registry-meta,.registry-contact{font-size:11px}
+  .registry-actions button{padding:7px 9px;font-size:11px}
+}
+@media (max-width:1260px){
+  html,body{height:auto;overflow:auto}
+  body{padding:14px}
+  .shell{
+    height:auto;
+    max-height:none;
+    grid-template-columns:1fr;
+    grid-template-rows:none;
+    grid-template-areas:'hero' 'snapshot' 'map' 'ops' 'registry';
+  }
+  .registry-list{overflow:visible}
+  .map-shell{min-height:560px}
+}
+@media (max-width:820px){
+  .panel,.card,.snapshot,.ops-panel,.map-panel,.registry-panel{padding:16px}
+  h1{font-size:32px}
+  .title-desktop{display:none}
+  .title-mobile{display:inline}
+  .kpis,.form-grid,.detail-grid,.dual-inputs{grid-template-columns:1fr}
+  .pills{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .pill{width:100%}
+  .actions{display:grid;grid-template-columns:1fr}
+  .ops-panel .actions{margin-top:28px;padding-top:22px}
+  .actions .primary,.actions .secondary{width:100%;min-width:0}
+  .registry-top{flex-direction:column}
+  .registry-actions{justify-content:flex-start}
+  .map-shell{min-height:460px}
+  .modal-shell{padding:16px}
+  .modal-card{width:min(360px,calc(100vw - 32px));max-height:calc(100dvh - 32px)}
+}
+@media (max-width:520px){
+  body{padding:12px}
+  .panel-head{flex-direction:column}
+  .zone-label{font-size:13px}
+  .zone-sub,.tower-type{font-size:10px}
+  .tower-label{font-size:12px}
+  .hero{padding-bottom:48px}
+  .snapshot{padding-bottom:68px}
+  .ops-panel .actions{margin-top:28px;padding-top:22px}
+  .ops-panel input,.ops-panel select,input,select{font-size:16px;padding:11px 12px;min-height:46px}
+  .form-grid > label{max-width:100%;overflow:hidden}
+  .ops-panel #towerContactDate,.ops-panel #towerContactTime,#towerContactDate,#towerContactTime{display:block;box-sizing:border-box;width:100%;max-width:100%;min-width:0;inline-size:100%;max-inline-size:100%;font-size:14px;padding:10px 32px 10px 12px;min-height:46px;line-height:1.2;letter-spacing:-.01em;overflow:hidden;-webkit-appearance:none;appearance:none}
+  .datetime-field input::-webkit-datetime-edit{padding:0;white-space:nowrap}
+  .datetime-field input::-webkit-date-and-time-value{text-align:left}
+  .datetime-field input::-webkit-calendar-picker-indicator{margin-left:8px}
+  .modal-shell{padding:12px}
+  .modal-card{width:min(320px,calc(100vw - 24px));max-height:calc(100dvh - 24px);padding:16px 14px 14px;border-radius:20px}
+  .modal-card h3{font-size:24px}
+  .modal-eyebrow{margin-bottom:8px}
+  .modal-stats{gap:8px}
+  .modal-stat{padding:10px}
+  .modal-stat strong{font-size:18px}
+  .modal-copy,.modal-focus-meta{font-size:12px;line-height:1.35}
+  .modal-focus{margin-top:10px;padding:12px}
+  .modal-close{top:10px;right:10px;width:30px;height:30px}
+  .modal-close::before{font-size:22px}
+  .toast-stack{left:10px;right:10px;bottom:calc(14px + env(safe-area-inset-bottom,0px));max-width:none}
+  .toast{font-size:12px;padding:11px 12px}
+}
+@supports (-webkit-touch-callout:none){
+  .datetime-field,#towerContactDate,#towerContactTime{display:grid!important;grid-template-columns:minmax(0,1fr);width:100%;max-width:100%;min-width:0;inline-size:100%;max-inline-size:100%;overflow:hidden}
+  #towerContactDate,#towerContactTime{box-sizing:border-box;width:100%!important;max-width:100%!important;min-width:0!important;font-size:16px!important;height:46px!important;min-height:46px!important;padding:0 34px 0 12px!important;line-height:46px!important;text-align:left!important;-webkit-appearance:none!important;appearance:none!important}
+  #towerContactDate::-webkit-date-and-time-value,#towerContactTime::-webkit-date-and-time-value{text-align:left;font-size:16px;line-height:1.2;margin:0;padding:0}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <section class="card hero">
+    <div>
+      <span class="eyebrow">National Operations View</span>
+      <h1><span class="title-desktop">Towers Philippine Coverage Dashboard</span><span class="title-mobile">Towers PH Coverage Dashboard</span></h1>
+      <div class="copy">Track national coverage, compare signal health across Luzon, Visayas, Mindanao, and Palawan, and keep every update inside one operational view.</div>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><span class="kpi-label">Towers Online</span><span class="kpi-value" id="kpiOnline">0</span></div>
+      <div class="kpi"><span class="kpi-label">Degraded</span><span class="kpi-value" id="kpiDegraded">0</span></div>
+      <div class="kpi"><span class="kpi-label">Average Signal</span><span class="kpi-value" id="kpiSignal">0%</span></div>
+      <div class="kpi"><span class="kpi-label">Active Alerts</span><span class="kpi-value" id="kpiAlerts">0</span></div>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-card"><span class="detail-label">Top Coverage Zone</span><span class="detail-value" id="heroTopZone">Luzon</span></div>
+      <div class="detail-card"><span class="detail-label">Latest Check-In</span><span class="detail-value" id="heroLatestCheck">--</span></div>
+      <div class="detail-card"><span class="detail-label">Maintenance Queue</span><span class="detail-value" id="heroMaintenanceQueue">0 towers</span></div>
+      <div class="detail-card"><span class="detail-label">Zone Availability</span><span class="detail-value" id="heroZoneHealth">0 / 4 live</span></div>
+    </div>
+  </section>
+
+  <section class="panel ops-panel">
+    <div class="panel-head">
+      <div>
+        <h2>Tower Management</h2>
+        <div class="panel-sub">Add, edit, and update tower records from the same page without opening a secondary view.</div>
+      </div>
+    </div>
+    <input type="hidden" id="towerId" value="" />
+    <div class="form-grid">
+      <label>Tower Name<input id="towerName" type="text" placeholder="Enter tower name" /></label>
+      <label>Tower Type<select id="towerType"><option value="Macro">Macro</option><option value="Relay">Relay</option><option value="Gateway">Gateway</option><option value="Coastal">Coastal</option></select></label>
+      <label>Status<select id="towerStatus"><option value="Online">Online</option><option value="Degraded">Degraded</option><option value="Offline">Offline</option><option value="Maintenance">Maintenance</option></select></label>
+      <label>Coverage Zone<select id="towerZone"><option value="Luzon">Luzon</option><option value="Visayas">Visayas</option><option value="Mindanao">Mindanao</option><option value="Palawan">Palawan</option></select></label>
+      <label>Region<select id="towerRegion"></select></label>
+      <label>Province<select id="towerProvince"></select></label>
+      <label>City / Municipality (Optional)<select id="towerCity"></select></label>
+      <label>Signal Strength (%)<input id="towerSignal" type="number" min="0" max="100" placeholder="0 to 100" /></label>
+      <label class="datetime-field">Last Check-In Date<input id="towerContactDate" type="date" /></label>
+      <label class="datetime-field">Last Check-In Time (Optional)<input id="towerContactTime" type="time" /></label>
+    </div>
+    <div class="actions">
+      <button type="button" id="saveTower" class="primary">Add Tower</button>
+      <button type="button" id="resetTower" class="secondary">Clear Form</button>
+    </div>
+    <div class="footnote">Coverage zone unlocks the matching regions, then provinces, then city or municipality. If city or municipality is left blank, the selected province anchors the map pin.</div>
+  </section>
+
+  <section class="panel map-panel">
+    <div class="panel-head">
+      <div>
+        <h2>Philippines Coverage Map</h2>
+        <div class="panel-sub">Select a regional hotspot to open live coverage details for Luzon, Visayas, Mindanao, or Palawan.</div>
+      </div>
+    </div>
+    <div class="map-shell">
+      <svg id="coverageMap" viewBox="20 40 740 930" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Philippines map with tower signals">
+        <path class="ph-outline" d="M 179.2 951.9 L 177.3 954.3 L 178.4 954.6 L 177.6 958.5 L 179.2 952.2 Z M 181.0 944.8 L 181.2 960.0 L 183.9 953.3 L 181.2 944.9 Z M 223.2 920.5 L 221.1 920.9 L 213.2 927.1 L 210.3 926.8 L 208.3 929.5 L 202.0 931.7 L 200.9 933.1 L 201.5 937.0 L 203.7 937.4 L 203.0 936.5 L 206.9 935.2 L 209.7 935.6 L 211.2 931.3 L 214.3 929.7 L 214.8 931.0 L 215.7 930.5 L 215.4 931.8 L 216.8 931.6 L 218.0 928.4 L 220.3 930.9 L 220.8 929.3 L 222.1 929.8 L 220.7 931.9 L 223.9 933.1 L 225.7 925.7 L 223.4 923.1 L 223.4 920.7 Z M 270.6 879.1 L 268.2 879.4 L 267.4 881.0 L 261.6 883.9 L 260.2 887.7 L 263.0 890.2 L 268.6 888.2 L 271.5 891.0 L 271.1 890.0 L 274.4 889.5 L 278.2 886.7 L 280.5 887.7 L 280.4 890.1 L 283.3 891.2 L 282.4 891.3 L 283.1 892.2 L 287.0 888.8 L 288.8 889.5 L 288.5 888.0 L 290.8 886.9 L 291.0 885.2 L 289.3 883.6 L 287.4 884.8 L 287.6 883.9 L 282.9 883.1 L 278.8 884.4 L 275.9 879.9 L 270.7 879.2 Z M 309.9 878.9 L 310.7 881.2 L 315.0 884.3 L 320.1 881.0 L 314.9 883.1 L 310.3 879.1 Z M 244.7 862.2 L 242.5 863.3 L 240.4 869.5 L 238.3 869.0 L 238.2 870.0 L 243.7 870.2 L 245.0 862.3 Z M 300.5 846.1 L 301.7 853.0 L 302.6 847.8 L 300.7 846.1 Z M 326.7 842.3 L 322.4 843.3 L 319.2 847.0 L 316.7 847.5 L 313.7 846.3 L 311.7 849.0 L 311.8 850.8 L 315.8 852.0 L 315.9 856.0 L 320.7 860.1 L 320.7 861.5 L 333.6 858.6 L 334.9 851.8 L 340.1 851.2 L 341.3 849.8 L 339.9 848.1 L 331.1 846.8 L 330.7 844.2 L 328.3 844.4 L 327.1 842.3 Z M 128.1 825.6 L 122.6 827.2 L 126.8 830.2 L 129.8 830.3 L 128.2 828.8 L 128.5 825.7 Z M 373.3 803.6 L 371.9 808.0 L 370.4 804.6 L 367.9 804.8 L 367.0 808.5 L 368.4 809.4 L 368.3 812.2 L 369.9 812.8 L 370.4 811.2 L 373.2 810.6 L 374.3 808.9 L 376.1 809.5 L 374.7 807.6 L 377.6 808.1 L 373.6 804.0 Z M 47.6 768.1 L 43.8 769.0 L 44.2 770.2 L 42.3 771.7 L 42.1 769.5 L 41.2 772.6 L 42.1 775.2 L 40.0 776.1 L 44.0 780.8 L 43.8 783.2 L 45.3 783.4 L 44.8 782.4 L 45.5 783.0 L 48.1 780.0 L 48.7 775.7 L 48.2 773.0 L 46.9 773.3 L 48.3 772.3 L 48.0 768.4 Z M 61.1 754.1 L 58.9 756.2 L 58.6 760.8 L 60.4 762.6 L 63.3 760.8 L 63.6 756.3 L 61.4 754.1 Z M 413.2 699.9 L 410.2 704.0 L 405.1 704.2 L 404.2 705.9 L 411.8 711.4 L 418.1 708.6 L 416.0 707.1 L 415.8 705.4 L 417.3 704.4 L 413.7 699.9 Z M 425.6 680.8 L 419.0 683.9 L 420.9 686.2 L 427.3 683.3 L 427.6 681.8 L 426.0 681.0 Z M 515.2 670.7 L 515.1 672.5 L 513.0 673.9 L 512.4 680.1 L 520.2 705.9 L 519.7 716.3 L 514.5 718.1 L 509.7 717.2 L 509.1 718.4 L 509.1 717.2 L 506.3 717.2 L 503.8 715.0 L 502.2 711.5 L 500.1 716.2 L 501.0 720.8 L 499.9 725.0 L 495.4 726.3 L 491.9 721.2 L 483.8 715.8 L 479.5 716.9 L 477.8 718.6 L 478.8 723.3 L 477.4 730.1 L 478.2 732.4 L 476.1 733.9 L 477.8 739.3 L 476.2 741.4 L 476.3 744.8 L 473.8 746.2 L 471.7 744.2 L 467.0 743.6 L 461.1 739.5 L 460.9 737.6 L 456.3 739.4 L 452.2 742.6 L 448.5 754.0 L 449.5 757.0 L 447.6 760.4 L 444.1 762.1 L 436.6 761.5 L 432.5 763.0 L 429.1 766.2 L 426.3 766.3 L 420.5 772.9 L 416.6 775.3 L 414.7 774.6 L 416.0 772.7 L 414.3 771.4 L 421.3 769.6 L 427.3 763.6 L 426.2 757.5 L 427.1 754.4 L 425.6 748.5 L 420.5 740.4 L 421.1 739.0 L 419.9 738.4 L 420.2 739.7 L 417.3 736.7 L 414.2 737.2 L 413.4 735.4 L 411.8 735.2 L 412.5 736.7 L 410.6 740.6 L 410.4 738.0 L 406.1 736.6 L 406.9 733.4 L 404.1 734.3 L 403.3 732.6 L 400.1 732.0 L 402.5 735.6 L 402.1 737.0 L 398.3 737.3 L 395.9 743.4 L 389.2 742.8 L 382.5 743.8 L 380.4 745.5 L 380.0 747.8 L 377.8 749.5 L 378.0 754.2 L 375.4 755.4 L 378.6 758.5 L 378.7 760.6 L 374.5 764.1 L 364.6 766.4 L 361.4 765.8 L 360.0 763.5 L 355.7 767.9 L 342.4 770.4 L 335.6 774.9 L 335.7 777.7 L 332.1 780.4 L 329.8 785.0 L 328.8 784.9 L 330.0 786.2 L 328.9 785.8 L 327.9 787.2 L 329.5 787.8 L 330.6 791.0 L 329.0 795.1 L 331.1 796.3 L 327.2 799.3 L 328.1 800.7 L 324.8 808.5 L 326.7 811.8 L 323.8 812.8 L 319.2 817.2 L 317.4 822.2 L 320.2 830.8 L 329.2 834.5 L 331.5 833.6 L 333.4 831.1 L 334.5 824.6 L 337.4 822.2 L 336.8 817.9 L 337.9 817.5 L 337.0 816.9 L 338.7 815.5 L 339.4 810.2 L 340.8 809.6 L 340.5 810.6 L 342.1 810.8 L 345.1 806.6 L 342.3 806.2 L 342.9 802.2 L 346.7 800.3 L 347.6 797.9 L 349.2 798.3 L 347.4 800.5 L 349.5 799.2 L 351.3 796.0 L 348.3 796.7 L 347.2 795.6 L 350.4 793.1 L 350.0 791.9 L 353.5 787.4 L 357.9 785.0 L 360.3 784.5 L 360.7 785.6 L 361.7 784.3 L 364.7 786.5 L 367.1 785.8 L 368.4 786.7 L 366.8 790.5 L 367.0 794.0 L 369.3 799.2 L 367.1 798.3 L 366.6 801.9 L 368.7 801.6 L 368.6 804.1 L 371.9 802.5 L 371.0 800.5 L 373.6 797.9 L 378.5 802.8 L 380.8 796.6 L 380.4 793.4 L 382.1 793.4 L 380.8 791.7 L 383.6 790.6 L 385.3 787.3 L 387.0 789.4 L 386.2 791.8 L 388.8 792.6 L 389.9 795.4 L 386.6 796.2 L 385.9 794.7 L 384.3 794.7 L 386.2 796.0 L 384.6 797.3 L 385.4 799.7 L 388.3 800.7 L 388.8 802.3 L 390.0 801.3 L 389.1 800.2 L 391.5 798.2 L 395.7 798.7 L 394.8 802.3 L 401.6 808.4 L 404.1 807.6 L 403.3 805.5 L 404.1 804.1 L 400.9 802.8 L 400.2 798.5 L 397.7 797.6 L 398.8 796.0 L 400.6 797.3 L 400.4 794.6 L 404.8 793.2 L 405.6 791.1 L 405.9 787.7 L 402.4 785.5 L 402.5 782.9 L 410.7 780.8 L 417.5 783.0 L 422.1 789.0 L 430.1 789.7 L 433.9 792.5 L 435.5 792.3 L 441.4 799.9 L 442.9 802.7 L 442.0 803.5 L 444.8 805.2 L 443.4 805.9 L 447.9 805.0 L 449.3 807.4 L 449.1 808.9 L 446.0 808.7 L 446.4 814.3 L 444.2 816.0 L 443.6 818.6 L 437.4 821.5 L 432.3 833.4 L 433.4 835.8 L 431.6 838.4 L 432.4 840.1 L 433.4 839.8 L 433.4 841.3 L 435.4 839.9 L 437.0 841.9 L 435.7 844.2 L 437.7 849.2 L 436.8 853.3 L 438.3 853.8 L 435.9 855.0 L 437.9 863.1 L 439.1 862.4 L 440.8 866.4 L 444.1 869.0 L 445.1 872.4 L 452.7 877.8 L 455.1 877.8 L 463.8 883.0 L 467.0 883.3 L 468.4 885.0 L 486.3 892.0 L 494.7 892.1 L 499.4 878.7 L 505.3 879.2 L 506.9 885.2 L 505.8 888.7 L 502.6 890.5 L 502.9 892.0 L 502.0 893.9 L 500.6 893.2 L 500.3 895.4 L 503.9 899.9 L 506.6 901.3 L 507.8 904.7 L 507.0 907.5 L 509.1 909.0 L 513.7 908.1 L 519.2 898.2 L 527.5 888.6 L 529.8 882.9 L 529.8 872.3 L 525.1 861.3 L 523.1 859.7 L 523.8 856.4 L 522.5 856.5 L 523.1 855.4 L 521.4 854.3 L 519.9 855.3 L 517.6 850.8 L 514.6 848.9 L 515.4 851.9 L 512.2 850.5 L 511.4 843.8 L 512.4 842.1 L 511.8 839.2 L 517.9 832.8 L 517.9 829.2 L 520.7 826.0 L 522.7 827.0 L 524.6 825.8 L 526.8 823.0 L 526.9 814.8 L 535.8 807.9 L 538.1 808.2 L 537.3 814.2 L 540.4 819.1 L 539.9 821.3 L 545.8 827.6 L 544.9 831.0 L 545.7 833.2 L 550.8 836.9 L 550.6 841.7 L 551.9 843.0 L 550.3 847.9 L 551.6 850.8 L 551.1 854.5 L 554.8 860.8 L 554.0 862.5 L 556.9 865.4 L 557.2 869.2 L 557.4 862.4 L 559.0 859.9 L 558.7 848.7 L 560.9 842.2 L 555.1 833.6 L 557.0 835.1 L 556.7 832.0 L 557.9 831.0 L 561.1 833.3 L 561.5 832.4 L 563.2 836.0 L 562.5 838.3 L 566.0 839.4 L 565.7 836.3 L 562.2 832.4 L 565.3 828.1 L 572.0 828.7 L 572.5 823.6 L 575.2 821.4 L 576.2 816.9 L 577.8 817.0 L 580.2 812.3 L 578.0 812.3 L 577.2 810.9 L 578.2 809.8 L 577.4 807.5 L 578.7 806.3 L 577.1 804.4 L 579.6 803.3 L 579.8 801.3 L 578.9 796.6 L 577.6 796.1 L 578.6 794.4 L 577.2 792.8 L 577.2 789.5 L 578.2 788.2 L 574.7 787.3 L 571.3 783.2 L 567.8 782.1 L 567.8 780.0 L 566.5 779.0 L 567.3 775.7 L 571.5 773.2 L 569.6 773.4 L 569.1 772.0 L 571.7 767.1 L 570.2 766.3 L 571.9 758.9 L 565.6 762.3 L 563.6 760.4 L 567.8 756.2 L 564.9 755.0 L 564.2 752.9 L 567.6 749.7 L 567.3 748.4 L 565.8 748.6 L 566.2 746.3 L 568.6 746.4 L 568.6 745.0 L 566.0 743.5 L 566.2 741.9 L 562.5 743.0 L 558.0 741.4 L 556.9 742.0 L 558.7 743.4 L 554.4 743.0 L 552.7 740.9 L 553.4 740.0 L 551.0 738.4 L 551.9 736.5 L 556.9 733.5 L 560.1 733.7 L 558.2 732.9 L 558.3 731.6 L 560.6 729.4 L 563.3 728.9 L 564.7 726.5 L 564.0 725.8 L 565.1 725.6 L 563.6 723.4 L 564.6 721.2 L 562.6 720.8 L 563.5 719.2 L 558.9 715.7 L 557.4 711.7 L 556.5 712.3 L 555.2 710.8 L 558.0 699.6 L 555.9 699.4 L 553.0 702.4 L 549.2 703.5 L 545.5 698.7 L 545.7 694.2 L 543.2 696.0 L 540.5 693.6 L 542.1 691.9 L 543.8 692.1 L 544.3 689.9 L 543.0 690.2 L 543.2 691.8 L 541.8 689.0 L 539.5 688.9 L 538.6 686.9 L 533.3 685.8 L 531.9 683.7 L 526.3 682.7 L 524.5 681.3 L 523.6 678.0 L 525.1 674.8 L 522.6 675.8 L 522.6 674.2 L 518.8 673.9 L 515.4 670.7 Z M 497.8 651.9 L 497.1 654.6 L 498.1 657.4 L 501.0 658.8 L 505.4 665.9 L 507.3 665.0 L 502.5 653.7 L 498.0 651.9 Z M 450.9 651.2 L 450.3 652.3 L 443.2 652.3 L 440.3 657.3 L 438.3 657.0 L 436.3 662.7 L 432.4 663.3 L 428.7 665.9 L 428.1 664.9 L 427.5 667.0 L 423.7 669.8 L 422.9 675.4 L 425.5 675.3 L 427.3 676.8 L 426.6 681.2 L 437.8 683.8 L 449.2 683.3 L 457.1 680.3 L 457.5 677.1 L 461.8 674.2 L 463.8 676.4 L 467.8 674.5 L 468.1 671.8 L 463.4 669.3 L 465.9 668.1 L 466.9 665.7 L 464.7 665.2 L 465.7 664.9 L 465.1 662.2 L 466.6 662.2 L 465.3 658.6 L 462.9 656.6 L 461.7 657.8 L 456.5 655.2 L 455.5 652.3 L 453.8 653.9 L 453.3 652.1 L 451.2 651.4 Z M 437.2 642.2 L 431.6 643.5 L 431.0 646.9 L 433.8 646.4 L 437.3 642.3 Z M 201.8 624.5 L 202.2 626.7 L 199.9 630.4 L 198.3 629.3 L 197.1 630.2 L 197.4 632.0 L 198.3 631.4 L 198.8 635.7 L 204.4 635.1 L 203.4 633.8 L 207.1 634.0 L 204.9 630.1 L 207.6 632.7 L 208.4 631.0 L 208.5 631.9 L 210.5 631.3 L 210.2 629.1 L 211.5 630.1 L 210.5 627.4 L 206.1 627.5 L 202.0 624.6 Z M 459.1 620.8 L 456.1 624.8 L 455.7 622.4 L 452.4 621.3 L 450.5 628.1 L 456.0 626.1 L 456.2 624.9 L 458.4 625.9 L 462.7 624.9 L 463.3 623.1 L 460.0 621.0 Z M 359.8 618.8 L 359.8 619.9 L 357.4 620.8 L 357.1 623.2 L 354.4 623.8 L 351.6 628.4 L 352.3 630.8 L 353.4 630.7 L 351.6 631.2 L 352.1 632.3 L 350.0 632.6 L 349.6 634.0 L 351.4 634.7 L 351.8 638.2 L 353.4 638.2 L 355.6 635.5 L 355.6 636.9 L 358.1 636.6 L 361.1 633.0 L 363.7 626.5 L 363.4 622.2 L 359.9 618.9 Z M 529.3 614.9 L 527.4 618.4 L 532.6 622.4 L 535.1 622.4 L 536.4 620.8 L 530.7 619.2 L 531.2 616.4 L 529.8 615.0 Z M 271.0 610.2 L 267.5 613.1 L 267.0 614.6 L 268.6 616.3 L 270.9 615.8 L 271.5 610.3 Z M 390.1 604.9 L 383.1 609.8 L 380.9 609.3 L 376.3 611.0 L 376.1 615.9 L 377.1 616.6 L 376.1 622.8 L 375.3 622.3 L 374.4 626.7 L 372.3 629.4 L 367.4 631.9 L 371.5 639.8 L 369.9 648.1 L 371.5 655.6 L 369.1 657.5 L 366.9 656.7 L 360.0 662.2 L 348.3 662.2 L 347.4 666.2 L 344.1 670.0 L 345.7 671.8 L 344.3 677.0 L 345.3 678.1 L 346.6 677.5 L 345.9 679.9 L 348.7 679.9 L 347.8 682.1 L 349.1 681.9 L 349.9 685.2 L 357.2 693.2 L 360.7 695.5 L 366.8 696.3 L 371.7 698.5 L 372.2 704.3 L 375.6 712.4 L 379.8 714.6 L 383.0 713.0 L 386.3 713.2 L 386.1 714.2 L 390.2 711.5 L 394.8 705.0 L 396.1 697.7 L 393.8 696.0 L 391.8 690.8 L 389.2 690.0 L 387.5 686.1 L 385.5 686.2 L 386.4 684.1 L 387.3 685.4 L 388.1 684.5 L 384.8 681.5 L 385.9 680.0 L 387.7 681.4 L 386.3 669.9 L 394.6 653.7 L 398.9 636.5 L 404.8 631.7 L 407.3 621.4 L 410.2 617.7 L 409.6 615.4 L 410.6 614.7 L 408.6 614.2 L 406.4 608.7 L 404.9 609.8 L 402.9 607.8 L 396.8 607.9 L 392.7 605.2 L 390.1 605.0 Z M 438.3 589.1 L 434.7 589.9 L 434.2 592.3 L 431.6 594.6 L 433.0 600.5 L 431.1 599.1 L 431.1 601.3 L 429.2 603.2 L 431.0 605.4 L 430.4 607.9 L 425.3 619.9 L 423.6 620.6 L 420.3 625.5 L 418.2 630.6 L 418.8 633.1 L 417.3 634.0 L 416.2 637.8 L 411.7 642.0 L 411.5 646.2 L 407.7 652.6 L 402.1 658.0 L 401.4 662.4 L 400.7 663.0 L 399.6 661.3 L 399.4 663.8 L 401.0 664.7 L 401.2 667.5 L 399.6 668.2 L 399.7 671.1 L 398.2 672.8 L 395.8 693.5 L 398.7 693.0 L 404.9 684.9 L 408.9 671.8 L 412.9 667.9 L 414.6 656.2 L 417.0 656.1 L 417.1 653.8 L 421.7 648.2 L 427.1 647.0 L 428.4 644.7 L 433.1 642.4 L 432.5 640.8 L 434.8 641.1 L 435.9 639.5 L 434.7 637.7 L 436.8 630.1 L 435.0 618.7 L 437.8 611.7 L 436.4 609.0 L 437.1 602.0 L 434.6 602.2 L 434.9 601.0 L 433.8 601.0 L 436.7 596.9 L 438.3 589.1 Z M 419.8 588.3 L 417.3 592.5 L 419.6 596.0 L 419.2 597.4 L 424.1 596.5 L 420.3 588.6 Z M 182.2 581.3 L 182.0 584.8 L 178.5 587.7 L 178.9 593.3 L 176.6 594.8 L 178.0 597.7 L 179.3 596.7 L 178.9 603.0 L 176.4 602.7 L 173.8 599.1 L 173.7 601.8 L 174.8 602.0 L 174.0 603.0 L 176.1 604.6 L 175.0 605.6 L 173.5 603.1 L 172.5 604.6 L 173.1 607.7 L 174.2 607.8 L 172.9 608.3 L 175.8 608.6 L 174.3 611.0 L 175.1 612.3 L 180.8 613.5 L 179.8 616.2 L 181.4 620.4 L 179.6 620.8 L 177.4 616.7 L 175.0 616.3 L 175.6 615.0 L 174.2 615.7 L 173.3 613.6 L 173.0 614.6 L 171.4 613.6 L 172.8 612.3 L 170.5 612.3 L 172.3 611.1 L 171.1 611.1 L 171.5 608.6 L 170.5 608.0 L 169.3 610.1 L 169.1 607.8 L 167.9 607.6 L 167.6 610.4 L 170.1 611.5 L 168.1 611.9 L 169.4 612.9 L 167.3 613.5 L 170.1 614.3 L 170.9 618.2 L 173.3 617.9 L 174.8 620.1 L 173.3 628.0 L 170.4 630.9 L 168.5 630.3 L 170.6 632.2 L 170.0 633.8 L 167.7 634.0 L 163.6 639.6 L 161.9 637.9 L 162.0 633.8 L 160.2 634.1 L 159.7 635.7 L 161.5 636.7 L 159.2 637.3 L 159.2 639.2 L 157.0 637.6 L 154.9 638.2 L 154.0 641.2 L 156.7 639.9 L 157.1 642.0 L 156.0 641.7 L 153.6 645.0 L 151.8 644.7 L 153.5 645.8 L 152.1 646.1 L 153.0 646.9 L 152.1 649.3 L 144.8 650.1 L 144.7 654.1 L 146.7 654.9 L 145.0 659.2 L 143.1 659.6 L 143.1 657.5 L 141.2 656.7 L 143.0 657.0 L 142.2 653.6 L 140.2 658.9 L 135.8 660.7 L 136.8 662.3 L 133.6 665.6 L 133.6 668.1 L 128.4 674.2 L 123.2 677.4 L 122.5 679.7 L 118.8 680.5 L 118.1 684.3 L 110.8 690.4 L 110.1 694.0 L 106.9 694.5 L 106.9 697.6 L 104.6 698.1 L 100.9 703.1 L 98.9 703.1 L 98.8 701.0 L 97.2 702.7 L 94.5 702.1 L 92.1 705.0 L 89.2 705.7 L 87.3 707.5 L 85.6 712.9 L 83.6 713.3 L 82.5 711.7 L 79.1 714.0 L 78.7 716.7 L 74.6 719.1 L 71.4 722.9 L 69.4 727.3 L 67.4 728.7 L 67.7 730.2 L 64.0 731.0 L 62.0 733.8 L 63.2 733.6 L 62.5 735.0 L 60.5 735.9 L 59.2 739.0 L 58.2 738.5 L 58.8 740.2 L 56.1 743.4 L 56.0 748.5 L 53.7 753.5 L 55.6 753.9 L 55.6 752.4 L 64.7 745.0 L 69.2 744.6 L 69.4 743.4 L 71.9 744.6 L 74.4 739.6 L 73.8 736.6 L 75.6 734.9 L 78.6 735.9 L 85.4 734.2 L 93.3 726.4 L 99.9 723.4 L 103.1 716.2 L 104.3 715.9 L 103.6 714.0 L 105.5 713.8 L 106.9 708.4 L 108.1 709.2 L 111.7 707.2 L 119.0 706.8 L 123.8 701.2 L 127.1 700.3 L 131.8 692.1 L 134.1 689.5 L 134.9 690.0 L 134.6 688.4 L 140.6 681.2 L 140.1 680.0 L 142.3 679.5 L 140.6 677.6 L 139.2 678.7 L 140.5 677.2 L 138.6 677.0 L 138.3 674.4 L 140.0 672.7 L 140.6 675.9 L 142.9 676.0 L 142.9 671.7 L 141.2 669.7 L 141.7 664.9 L 142.5 665.7 L 142.9 664.3 L 145.7 664.3 L 148.1 662.1 L 154.7 661.7 L 166.6 658.2 L 168.6 650.8 L 173.6 643.5 L 181.1 639.9 L 187.4 640.1 L 188.4 637.3 L 195.6 632.6 L 190.6 626.2 L 191.3 625.5 L 190.4 624.0 L 192.9 624.3 L 192.3 623.2 L 190.7 622.3 L 190.5 623.6 L 187.5 623.8 L 189.2 620.3 L 187.8 617.2 L 189.1 615.0 L 187.7 614.1 L 185.5 615.5 L 182.6 612.1 L 183.7 604.6 L 187.4 604.6 L 187.0 600.4 L 185.6 601.2 L 183.6 597.6 L 185.7 595.3 L 187.4 588.8 L 186.5 586.1 L 184.1 586.5 L 183.8 581.9 L 182.4 581.5 Z M 201.1 576.1 L 202.9 577.9 L 201.7 578.1 L 202.3 579.5 L 200.7 578.7 L 200.3 579.8 L 198.9 577.5 L 198.3 578.5 L 199.5 579.5 L 198.3 580.7 L 195.4 578.7 L 198.3 582.7 L 201.5 581.1 L 200.4 582.8 L 202.0 584.0 L 203.2 582.0 L 204.3 577.3 L 201.5 576.4 Z M 320.6 552.6 L 320.2 553.8 L 316.7 554.9 L 316.4 559.5 L 314.4 562.5 L 326.9 563.8 L 328.6 565.6 L 328.8 568.7 L 327.8 577.3 L 326.0 578.9 L 326.3 585.8 L 324.6 588.4 L 326.0 590.5 L 324.9 594.4 L 326.1 603.2 L 322.2 608.9 L 318.8 618.2 L 321.9 623.2 L 320.7 630.2 L 318.4 632.7 L 318.2 635.9 L 320.9 638.2 L 325.9 633.7 L 328.4 628.8 L 331.1 628.3 L 334.6 625.2 L 348.5 622.5 L 355.5 622.5 L 357.2 617.6 L 360.1 617.5 L 360.5 616.4 L 364.1 617.0 L 366.9 613.1 L 367.2 610.7 L 365.5 608.1 L 366.7 605.7 L 370.6 605.5 L 371.8 603.3 L 373.6 603.9 L 374.7 601.3 L 376.3 603.2 L 376.1 601.5 L 377.6 601.8 L 379.3 600.0 L 381.0 595.5 L 383.9 596.9 L 383.3 595.1 L 384.7 596.4 L 386.0 595.5 L 384.1 592.5 L 384.5 586.7 L 387.4 583.7 L 386.1 581.8 L 388.2 578.9 L 385.5 576.4 L 386.6 576.8 L 387.9 574.0 L 387.3 571.7 L 379.4 577.6 L 374.3 578.1 L 373.4 581.0 L 372.2 580.4 L 373.4 579.4 L 372.2 579.3 L 375.1 576.3 L 371.4 574.9 L 369.2 571.0 L 363.0 570.8 L 362.9 572.9 L 361.0 573.2 L 361.4 574.6 L 359.0 573.1 L 358.6 575.9 L 355.5 576.7 L 355.6 574.1 L 351.5 572.0 L 348.4 574.3 L 347.8 572.7 L 350.3 573.1 L 348.2 571.1 L 346.6 572.0 L 347.1 570.9 L 345.6 568.6 L 347.1 568.6 L 350.0 571.9 L 350.6 571.1 L 346.6 568.0 L 344.8 564.2 L 340.3 563.5 L 335.5 559.6 L 328.0 558.5 L 320.9 552.8 Z M 206.0 550.4 L 204.2 551.3 L 205.4 553.5 L 202.8 552.1 L 206.7 557.9 L 205.5 558.7 L 206.2 560.8 L 207.6 562.6 L 209.4 562.4 L 209.4 560.4 L 211.6 561.1 L 208.9 563.6 L 210.3 565.2 L 208.0 564.3 L 208.3 568.3 L 209.7 567.9 L 209.1 566.3 L 210.4 567.8 L 214.2 565.0 L 214.7 562.8 L 213.4 562.8 L 215.6 561.1 L 213.1 560.0 L 214.3 558.2 L 212.6 558.0 L 215.6 556.9 L 210.9 555.1 L 213.1 554.0 L 212.1 552.9 L 210.1 554.6 L 209.3 553.3 L 209.5 554.6 L 208.4 554.3 L 208.4 552.5 L 209.6 552.3 L 206.2 550.6 Z M 225.1 550.0 L 222.2 552.8 L 226.0 559.9 L 225.3 554.4 L 226.9 552.8 L 225.4 550.2 Z M 288.6 542.2 L 287.0 542.6 L 286.4 544.3 L 288.6 545.3 L 287.2 546.2 L 289.0 550.2 L 291.1 547.6 L 289.2 545.0 L 290.4 543.7 L 289.1 542.4 Z M 271.4 532.6 L 269.6 533.1 L 269.4 536.7 L 271.8 537.7 L 272.1 539.6 L 274.8 540.3 L 271.6 532.8 Z M 205.6 530.8 L 203.9 531.9 L 204.0 534.3 L 206.8 534.0 L 203.7 535.0 L 204.5 536.8 L 203.2 541.0 L 205.7 537.9 L 208.0 545.1 L 209.7 545.6 L 209.9 547.9 L 211.3 547.9 L 210.2 548.7 L 212.6 549.9 L 214.4 548.1 L 217.0 551.4 L 218.1 550.4 L 216.8 549.1 L 218.6 549.7 L 218.8 547.4 L 221.0 547.6 L 224.0 550.2 L 225.6 548.9 L 228.2 550.3 L 230.2 549.7 L 229.6 547.1 L 228.6 547.6 L 230.5 546.2 L 230.0 544.1 L 226.8 541.2 L 225.2 542.0 L 225.0 538.1 L 222.9 537.0 L 223.4 541.8 L 220.6 542.6 L 216.2 539.7 L 217.5 538.4 L 214.9 538.6 L 212.3 535.1 L 207.5 534.2 L 207.3 531.5 L 205.6 530.9 Z M 353.5 521.0 L 348.9 522.1 L 346.8 525.1 L 348.4 527.1 L 353.3 529.0 L 354.6 531.8 L 358.5 534.3 L 361.2 530.8 L 362.1 526.8 L 359.6 522.2 L 353.7 521.1 Z M 392.2 515.7 L 392.9 523.7 L 395.0 525.7 L 391.4 534.3 L 392.1 535.8 L 391.0 535.9 L 391.7 537.1 L 393.8 535.6 L 394.9 537.2 L 395.5 535.9 L 395.7 537.7 L 394.0 538.2 L 394.7 540.2 L 392.3 541.5 L 392.7 542.5 L 391.1 541.9 L 389.8 548.2 L 386.9 552.9 L 387.8 554.5 L 395.5 548.0 L 396.5 545.1 L 399.7 543.0 L 402.9 538.0 L 409.1 537.3 L 413.3 543.9 L 412.5 545.0 L 415.9 544.8 L 415.2 546.6 L 420.3 550.1 L 418.7 551.6 L 419.2 553.0 L 425.6 554.2 L 430.7 557.0 L 438.1 564.8 L 438.7 557.4 L 434.3 549.9 L 435.0 548.5 L 437.4 552.2 L 437.7 551.0 L 428.9 537.6 L 427.6 536.9 L 426.6 538.4 L 423.6 535.6 L 422.6 538.3 L 417.8 530.8 L 415.2 530.2 L 413.8 528.1 L 411.3 529.5 L 413.0 527.9 L 410.7 526.2 L 409.9 523.4 L 408.9 524.2 L 403.7 520.4 L 399.6 521.0 L 400.3 523.2 L 399.2 522.9 L 397.3 525.1 L 397.0 523.2 L 399.1 522.2 L 397.8 519.1 L 400.1 519.0 L 392.7 515.7 Z M 338.9 514.3 L 338.0 517.1 L 336.7 517.3 L 339.0 522.5 L 341.4 520.8 L 339.1 514.4 Z M 329.3 511.6 L 329.7 512.5 L 327.3 514.5 L 323.2 515.9 L 323.4 524.4 L 321.9 526.9 L 319.8 527.4 L 318.6 531.8 L 324.1 536.2 L 322.5 538.7 L 321.3 535.9 L 320.8 538.7 L 324.0 543.7 L 324.3 540.9 L 326.9 539.2 L 325.5 538.4 L 325.3 536.4 L 328.0 531.8 L 329.4 521.4 L 330.9 519.2 L 329.9 514.6 L 332.2 513.9 L 329.6 511.6 Z M 413.6 510.5 L 412.3 511.4 L 413.3 513.8 L 411.4 512.8 L 411.3 514.0 L 423.0 530.3 L 423.1 526.4 L 419.1 517.1 L 420.0 516.7 L 419.4 514.9 L 415.5 513.0 L 413.8 510.5 Z M 378.6 484.5 L 377.8 486.9 L 374.9 487.1 L 376.7 488.7 L 375.9 492.0 L 377.0 491.2 L 378.1 493.1 L 382.5 493.5 L 383.3 495.8 L 387.2 498.6 L 386.6 499.4 L 390.0 502.2 L 393.6 502.8 L 399.1 510.4 L 400.5 510.2 L 396.2 505.7 L 394.4 499.7 L 389.1 498.2 L 382.0 486.6 L 381.1 486.9 L 381.4 485.8 L 378.8 484.6 Z M 442.0 480.2 L 438.0 481.8 L 445.2 483.8 L 447.0 483.4 L 446.4 481.8 L 442.5 480.3 Z M 433.5 477.1 L 429.6 477.4 L 432.4 480.5 L 437.0 481.2 L 440.3 479.0 L 437.1 477.8 L 436.4 479.0 L 435.2 477.4 L 434.0 478.9 L 433.8 477.2 Z M 426.4 473.6 L 425.8 474.6 L 427.0 475.8 L 425.8 478.2 L 427.6 479.2 L 427.6 480.9 L 429.8 480.1 L 428.3 477.7 L 430.8 475.1 L 426.8 473.7 Z M 234.5 463.8 L 228.9 466.8 L 228.7 469.9 L 233.0 472.5 L 233.3 470.5 L 237.0 470.1 L 238.3 476.8 L 240.7 478.6 L 240.7 480.9 L 243.3 480.6 L 248.0 482.9 L 252.4 489.8 L 255.2 497.3 L 253.9 502.4 L 255.2 503.3 L 255.5 508.2 L 259.2 509.2 L 263.3 514.9 L 263.1 521.0 L 265.9 525.4 L 271.5 530.6 L 273.8 530.4 L 272.5 533.2 L 273.5 535.6 L 277.9 535.6 L 280.9 537.7 L 282.9 533.2 L 285.8 532.8 L 287.0 531.0 L 288.6 532.6 L 288.0 533.5 L 289.4 533.3 L 288.7 529.0 L 292.5 529.2 L 290.3 527.1 L 290.1 524.4 L 292.1 522.7 L 291.7 520.5 L 295.6 518.7 L 298.4 515.5 L 297.3 510.4 L 293.8 505.8 L 294.9 501.8 L 294.5 492.2 L 298.3 488.5 L 298.4 486.7 L 295.7 485.0 L 291.9 485.4 L 291.9 480.7 L 288.4 480.1 L 278.4 469.0 L 275.2 470.8 L 269.3 470.0 L 264.8 465.7 L 266.9 464.2 L 254.0 467.5 L 235.1 464.0 Z M 315.6 461.6 L 315.0 463.3 L 316.1 463.2 L 312.6 468.1 L 313.1 474.2 L 315.6 477.5 L 323.4 482.3 L 325.5 481.4 L 326.9 476.3 L 331.5 472.7 L 328.7 469.8 L 330.2 468.0 L 327.9 466.1 L 325.4 466.3 L 326.3 466.3 L 325.8 464.8 L 324.5 464.8 L 323.6 462.7 L 323.0 464.2 L 321.3 463.9 L 321.6 462.2 L 321.2 463.9 L 319.2 463.0 L 318.5 464.1 L 316.0 461.6 Z M 228.5 455.3 L 233.1 458.1 L 235.0 458.4 L 234.4 456.9 L 229.7 455.7 Z M 257.8 455.0 L 258.5 457.1 L 261.1 458.3 L 264.0 458.1 L 263.6 456.8 L 258.1 455.3 Z M 216.5 445.1 L 215.7 446.1 L 217.1 449.6 L 225.6 454.2 L 226.4 455.9 L 227.8 454.0 L 225.5 453.3 L 227.5 452.4 L 225.6 449.2 L 218.3 445.4 Z M 446.3 432.0 L 444.3 434.8 L 441.8 434.2 L 443.0 441.7 L 441.9 444.0 L 442.3 449.0 L 440.1 454.1 L 436.1 456.4 L 437.4 459.8 L 440.7 460.3 L 446.3 464.6 L 446.5 462.2 L 449.1 460.3 L 452.1 460.5 L 452.5 462.6 L 454.0 462.8 L 453.0 462.3 L 454.3 460.2 L 453.9 457.6 L 458.0 456.2 L 456.2 453.5 L 457.6 451.4 L 456.7 449.9 L 458.3 449.0 L 457.0 446.7 L 458.3 446.1 L 457.1 445.5 L 457.5 444.3 L 456.7 443.5 L 456.4 444.7 L 454.4 440.9 L 452.2 443.3 L 449.4 435.7 L 446.3 432.1 Z M 319.2 424.4 L 318.3 427.1 L 321.7 430.8 L 332.0 437.5 L 333.7 437.0 L 332.7 435.0 L 319.5 424.6 Z M 345.6 396.6 L 341.7 397.9 L 340.2 399.8 L 347.4 398.8 L 345.9 396.7 Z M 333.4 390.4 L 330.6 391.3 L 328.3 390.6 L 329.0 392.5 L 337.3 397.1 L 337.6 393.6 L 333.8 392.6 L 335.0 390.6 L 333.6 390.7 Z M 319.5 378.5 L 315.6 380.5 L 314.0 379.6 L 314.1 382.6 L 313.2 381.5 L 312.0 385.3 L 313.7 385.7 L 313.9 384.3 L 319.3 395.8 L 319.4 398.2 L 317.8 397.2 L 318.3 401.8 L 321.7 401.8 L 325.1 397.7 L 324.3 392.1 L 322.0 390.6 L 321.2 387.3 L 324.3 386.2 L 324.2 383.6 L 322.6 384.1 L 323.8 382.4 L 326.2 384.4 L 325.9 381.4 L 323.5 381.4 L 324.3 380.2 L 323.3 379.4 L 320.2 378.5 L 319.6 379.5 L 319.4 378.6 Z M 210.9 306.4 L 206.8 309.3 L 210.8 313.4 L 212.2 312.9 L 211.3 310.4 L 212.7 308.4 L 210.9 306.7 Z M 290.4 163.7 L 283.2 164.9 L 283.4 167.1 L 292.6 166.5 L 294.2 165.1 L 291.2 164.0 Z M 318.5 158.3 L 315.7 159.9 L 314.7 162.7 L 315.5 165.0 L 313.5 165.4 L 315.0 168.9 L 317.0 165.8 L 322.5 161.6 L 319.8 158.4 Z M 279.4 148.9 L 278.4 155.1 L 280.6 157.7 L 281.4 156.9 L 279.5 149.0 Z M 290.0 136.5 L 286.6 138.5 L 289.1 140.1 L 289.7 142.6 L 295.8 144.8 L 297.5 143.2 L 296.5 136.8 L 294.5 138.0 L 290.6 136.6 Z M 323.3 75.3 L 320.7 76.4 L 321.3 77.7 L 319.0 79.8 L 318.4 83.2 L 321.5 82.2 L 321.0 79.6 L 325.1 76.7 L 323.7 75.5 Z M 315.3 55.9 L 311.0 62.3 L 311.9 64.2 L 316.2 60.3 L 316.6 57.4 L 315.5 56.1 Z M 530.2 817.3 L 527.6 823.1 L 528.5 824.8 L 530.4 824.5 L 530.9 830.4 L 533.2 834.3 L 534.9 831.8 L 533.9 826.6 L 535.1 821.8 L 530.7 817.5 Z M 474.0 702.3 L 470.7 703.7 L 470.2 707.2 L 472.4 710.0 L 477.6 712.3 L 479.8 709.9 L 478.2 705.4 L 474.7 702.4 Z M 542.7 674.3 L 541.2 676.4 L 542.3 680.2 L 540.2 682.3 L 541.4 682.4 L 542.6 685.3 L 544.3 685.0 L 545.9 679.7 L 544.2 678.3 L 544.4 675.3 L 543.0 675.8 L 542.9 674.4 Z M 526.4 665.6 L 524.1 667.7 L 523.0 670.9 L 523.9 670.3 L 523.8 671.8 L 528.9 669.4 L 526.5 668.6 L 526.5 665.8 Z M 550.4 657.8 L 548.3 658.9 L 548.5 660.7 L 544.1 667.5 L 545.0 669.0 L 543.6 670.1 L 548.2 675.1 L 547.9 673.9 L 552.7 675.0 L 555.5 672.8 L 554.3 669.5 L 551.5 669.3 L 553.1 667.7 L 550.4 658.9 Z M 526.4 634.6 L 524.8 636.2 L 523.8 640.5 L 521.4 639.4 L 521.8 643.0 L 519.3 643.0 L 520.6 645.2 L 519.2 647.4 L 520.9 649.5 L 518.4 649.2 L 519.9 650.6 L 518.3 650.7 L 517.9 654.3 L 517.0 653.4 L 519.0 657.4 L 521.2 656.2 L 522.8 657.3 L 522.4 655.9 L 523.5 656.6 L 524.3 658.4 L 522.7 658.5 L 523.0 661.0 L 521.8 661.4 L 524.6 661.5 L 523.6 662.1 L 525.0 663.1 L 523.6 663.4 L 526.6 664.5 L 527.4 669.1 L 529.7 668.4 L 530.1 667.0 L 527.2 663.8 L 528.5 663.0 L 529.5 657.6 L 527.5 654.2 L 528.3 651.5 L 526.5 650.6 L 527.6 649.6 L 526.7 643.8 L 528.6 639.0 L 526.7 634.6 Z M 452.3 573.6 L 450.7 575.5 L 450.9 577.5 L 452.5 582.0 L 454.2 582.4 L 453.2 583.9 L 454.9 584.7 L 453.8 584.8 L 453.9 587.5 L 455.2 589.0 L 456.6 588.5 L 455.7 589.7 L 457.3 591.7 L 456.2 593.7 L 457.2 598.9 L 455.4 601.5 L 457.5 603.1 L 457.8 605.9 L 455.7 609.3 L 457.9 610.0 L 458.0 607.8 L 458.8 611.1 L 463.5 612.4 L 465.5 609.0 L 464.8 606.3 L 467.7 604.3 L 472.9 608.5 L 478.5 617.6 L 479.6 623.9 L 478.1 625.2 L 477.5 630.9 L 475.0 633.8 L 475.7 639.9 L 478.9 643.1 L 477.0 652.2 L 478.2 653.4 L 484.4 654.1 L 492.0 660.6 L 491.9 655.9 L 489.3 648.9 L 488.9 639.8 L 492.0 640.3 L 497.6 651.8 L 497.9 645.4 L 502.7 647.1 L 504.7 646.5 L 505.5 644.1 L 505.0 640.1 L 500.6 636.9 L 501.2 634.4 L 499.8 631.1 L 501.0 627.9 L 496.9 624.1 L 497.1 622.0 L 492.9 620.9 L 491.2 618.6 L 492.8 601.5 L 491.0 596.3 L 492.3 591.7 L 491.7 593.5 L 491.0 591.0 L 488.5 589.4 L 489.5 582.8 L 488.1 583.1 L 487.3 581.2 L 485.8 582.3 L 485.2 581.5 L 484.9 582.9 L 483.9 580.4 L 483.9 582.3 L 480.2 581.0 L 479.8 583.6 L 473.9 588.0 L 467.4 588.0 L 465.5 586.1 L 464.7 581.3 L 461.6 579.3 L 460.6 580.2 L 461.2 584.0 L 452.5 573.7 Z M 458.5 565.6 L 453.4 567.5 L 460.6 579.0 L 467.4 578.5 L 469.3 575.3 L 464.7 567.4 L 458.9 565.8 Z M 475.4 564.2 L 474.2 565.8 L 475.9 569.4 L 476.6 568.7 L 478.8 571.2 L 477.1 571.6 L 477.5 573.0 L 479.8 573.5 L 479.1 574.7 L 481.0 575.2 L 482.2 571.6 L 479.1 571.5 L 479.8 569.1 L 477.6 567.8 L 478.4 566.5 L 476.9 567.3 L 475.4 564.3 Z M 498.7 516.6 L 496.8 517.8 L 494.6 516.9 L 495.1 519.0 L 492.2 519.6 L 491.3 517.7 L 489.2 518.6 L 488.1 516.6 L 485.7 517.6 L 482.7 516.6 L 484.0 517.7 L 482.8 519.6 L 479.3 518.9 L 470.1 520.9 L 466.1 519.4 L 460.7 520.2 L 460.8 518.8 L 458.7 519.6 L 456.6 517.6 L 456.4 518.9 L 454.6 518.2 L 454.7 519.2 L 453.1 519.4 L 450.4 516.7 L 449.3 518.6 L 450.6 523.1 L 452.4 524.4 L 453.6 531.6 L 456.5 538.3 L 464.7 546.0 L 467.9 545.6 L 473.4 548.7 L 473.6 551.8 L 476.3 553.1 L 475.9 555.0 L 480.0 554.5 L 480.8 555.7 L 478.8 554.6 L 479.4 555.5 L 478.1 556.0 L 479.3 556.4 L 478.1 557.1 L 481.4 558.7 L 481.0 560.7 L 482.8 559.8 L 484.2 563.0 L 486.0 563.6 L 490.4 561.5 L 493.0 563.1 L 492.9 564.6 L 492.2 564.0 L 489.1 567.7 L 490.2 570.8 L 488.0 573.1 L 484.0 572.8 L 484.6 575.0 L 482.7 574.5 L 480.5 576.3 L 481.7 579.1 L 484.5 579.2 L 484.6 576.6 L 485.1 578.8 L 490.4 581.2 L 489.4 589.2 L 499.0 589.7 L 502.3 599.6 L 503.7 600.3 L 504.4 598.2 L 507.2 597.1 L 508.4 598.5 L 513.3 599.5 L 513.3 600.5 L 514.9 598.9 L 516.0 599.5 L 516.4 598.0 L 519.1 600.5 L 520.4 596.5 L 522.5 596.7 L 521.8 598.0 L 522.9 599.1 L 527.5 597.1 L 527.3 598.2 L 529.6 599.0 L 528.1 600.4 L 532.8 604.5 L 533.0 602.5 L 527.7 594.0 L 523.9 592.1 L 524.9 594.5 L 520.4 594.2 L 521.1 590.6 L 524.7 588.2 L 525.9 585.2 L 523.2 582.8 L 522.0 583.1 L 519.8 579.7 L 518.1 580.1 L 520.0 578.5 L 516.8 574.6 L 517.1 572.1 L 515.1 571.2 L 516.5 569.1 L 515.8 567.7 L 518.1 567.6 L 516.9 566.8 L 516.3 562.7 L 515.1 563.8 L 513.7 562.8 L 517.0 560.8 L 514.9 558.9 L 514.4 551.7 L 519.4 545.9 L 515.0 542.2 L 517.0 541.1 L 516.1 539.9 L 519.1 539.6 L 519.3 538.5 L 516.1 536.6 L 515.1 534.0 L 510.5 533.7 L 511.9 532.4 L 510.5 532.2 L 509.5 534.2 L 508.3 533.9 L 509.6 533.5 L 509.3 531.5 L 506.9 533.0 L 506.6 532.1 L 508.5 531.0 L 506.6 530.4 L 508.2 527.7 L 507.3 527.1 L 509.6 526.6 L 499.0 517.2 Z M 258.7 177.9 L 255.2 179.6 L 255.4 182.5 L 254.0 184.2 L 246.3 183.8 L 242.9 186.8 L 244.7 191.3 L 244.6 196.3 L 237.7 209.4 L 239.2 214.4 L 235.4 219.0 L 237.0 224.0 L 233.9 225.6 L 235.8 229.1 L 231.1 232.0 L 232.2 232.6 L 230.7 238.8 L 233.4 241.5 L 234.8 241.3 L 237.2 247.3 L 234.0 258.3 L 236.6 270.2 L 233.8 276.7 L 230.2 279.2 L 230.2 288.0 L 228.7 291.7 L 227.0 291.4 L 229.3 293.8 L 228.4 298.0 L 229.9 299.7 L 229.3 304.5 L 230.6 309.4 L 232.5 312.6 L 231.8 310.7 L 233.9 312.0 L 235.1 316.9 L 229.9 322.4 L 219.4 323.8 L 216.9 322.3 L 217.8 321.5 L 216.3 317.8 L 217.6 317.8 L 216.4 316.6 L 213.9 315.1 L 212.1 316.4 L 210.2 313.2 L 206.9 312.1 L 207.5 305.4 L 205.6 303.9 L 199.7 307.4 L 197.7 316.4 L 199.2 318.5 L 197.8 323.1 L 198.9 324.6 L 197.5 327.9 L 198.3 330.1 L 200.6 330.3 L 201.0 328.4 L 203.5 327.9 L 206.6 334.6 L 204.8 336.3 L 206.5 339.4 L 204.2 340.8 L 207.9 343.4 L 206.1 347.0 L 206.8 350.5 L 208.7 349.9 L 207.9 350.8 L 209.7 353.5 L 208.3 355.1 L 206.1 354.2 L 206.9 356.7 L 205.3 357.7 L 212.3 366.9 L 214.8 378.1 L 214.4 388.1 L 216.1 389.9 L 215.9 392.1 L 217.6 391.9 L 216.1 393.7 L 221.4 396.2 L 223.5 392.4 L 222.9 388.8 L 226.3 390.3 L 228.1 392.8 L 226.1 392.6 L 227.2 394.0 L 225.0 395.1 L 227.1 396.5 L 225.6 396.6 L 225.3 399.0 L 228.9 402.6 L 232.0 402.6 L 233.5 405.2 L 232.4 408.3 L 233.1 411.9 L 236.4 412.7 L 238.1 414.7 L 239.4 414.8 L 239.1 413.2 L 243.3 413.8 L 245.9 409.6 L 241.9 397.3 L 241.5 392.4 L 242.4 393.4 L 241.7 391.7 L 243.9 392.1 L 243.3 390.2 L 247.9 394.7 L 253.3 395.2 L 253.8 394.2 L 253.6 395.2 L 256.2 395.4 L 257.2 394.2 L 259.7 397.4 L 262.0 397.2 L 265.0 402.4 L 265.1 404.0 L 263.7 404.0 L 265.4 404.3 L 266.5 406.3 L 266.1 410.6 L 261.4 412.5 L 261.0 411.6 L 262.9 410.7 L 261.9 410.6 L 262.7 409.7 L 261.3 410.1 L 260.1 413.5 L 254.4 419.1 L 251.3 421.6 L 246.2 422.7 L 246.1 425.2 L 244.3 424.8 L 244.0 426.8 L 245.7 427.7 L 243.6 428.1 L 245.5 429.4 L 243.2 430.1 L 246.3 431.5 L 246.7 438.5 L 245.1 439.1 L 246.1 448.1 L 247.9 450.4 L 249.2 449.3 L 248.1 445.6 L 251.8 446.0 L 250.4 443.7 L 251.0 441.9 L 255.6 441.6 L 262.4 444.6 L 261.8 447.5 L 263.2 450.9 L 260.2 453.2 L 261.3 455.3 L 265.2 450.3 L 267.4 449.8 L 270.6 452.2 L 269.3 458.0 L 271.6 458.9 L 277.5 457.4 L 283.2 460.1 L 287.6 456.6 L 289.4 455.9 L 290.7 456.9 L 293.5 455.2 L 292.0 454.6 L 291.4 450.7 L 293.8 446.5 L 306.4 442.0 L 306.1 439.7 L 309.1 439.3 L 312.9 440.9 L 313.2 443.5 L 315.9 443.3 L 317.0 445.3 L 321.7 446.5 L 322.0 448.4 L 324.7 448.4 L 326.1 450.1 L 328.6 449.6 L 334.7 459.8 L 338.0 459.6 L 338.7 461.3 L 341.1 460.4 L 341.7 462.2 L 345.5 464.1 L 352.1 474.2 L 351.3 479.8 L 356.5 484.4 L 362.3 480.9 L 360.9 478.1 L 360.9 472.2 L 354.5 462.5 L 355.5 462.0 L 357.6 464.7 L 358.5 463.9 L 353.6 460.9 L 350.8 457.3 L 349.9 453.6 L 352.3 452.6 L 351.5 448.4 L 352.4 447.8 L 346.5 440.8 L 352.4 441.9 L 353.1 439.6 L 354.8 441.1 L 354.8 442.9 L 358.9 444.1 L 359.6 447.6 L 363.4 447.8 L 366.0 449.5 L 364.5 450.0 L 369.8 452.4 L 371.2 454.9 L 367.7 457.1 L 372.7 461.2 L 389.8 469.6 L 392.2 477.2 L 397.2 482.3 L 395.0 485.2 L 394.6 490.2 L 396.8 493.0 L 402.7 491.2 L 408.5 496.9 L 410.0 496.4 L 415.3 500.7 L 415.9 498.0 L 418.6 496.7 L 416.5 498.5 L 417.6 500.9 L 417.6 499.2 L 419.9 499.1 L 418.6 500.3 L 420.0 502.1 L 421.3 500.1 L 423.4 501.1 L 424.4 499.6 L 425.2 500.4 L 425.5 498.8 L 426.7 499.1 L 428.3 494.6 L 432.5 495.9 L 436.7 495.4 L 437.1 497.6 L 434.6 501.1 L 432.0 500.3 L 430.6 502.0 L 426.9 500.3 L 425.3 503.0 L 427.8 512.7 L 430.2 514.7 L 431.3 514.3 L 434.1 518.8 L 439.3 519.3 L 440.2 518.1 L 440.0 513.7 L 442.2 512.3 L 443.4 504.0 L 443.0 499.4 L 441.3 498.5 L 443.2 493.5 L 445.8 492.4 L 445.2 489.7 L 442.4 489.2 L 438.9 493.2 L 433.2 487.3 L 429.3 485.5 L 427.1 485.9 L 423.7 490.8 L 421.1 489.8 L 420.9 488.4 L 422.8 487.0 L 421.2 485.3 L 422.1 480.8 L 427.0 480.9 L 427.4 480.0 L 425.2 478.5 L 425.4 480.3 L 424.5 477.3 L 420.5 475.3 L 419.5 472.7 L 420.4 472.8 L 416.8 466.8 L 413.8 466.0 L 411.5 462.5 L 408.7 462.0 L 409.7 459.8 L 409.1 457.5 L 411.8 452.7 L 423.8 455.0 L 427.6 452.2 L 433.5 453.1 L 431.5 449.0 L 422.7 446.3 L 418.9 440.9 L 418.3 443.8 L 417.0 444.4 L 412.4 443.6 L 409.4 441.4 L 409.2 442.6 L 407.8 441.5 L 406.3 442.4 L 406.9 440.8 L 404.0 439.4 L 404.1 442.0 L 402.7 442.0 L 400.6 435.6 L 398.1 436.8 L 399.8 435.3 L 397.9 431.7 L 398.2 433.8 L 396.2 433.8 L 396.9 435.4 L 393.2 433.5 L 394.7 435.7 L 391.8 436.2 L 394.0 437.6 L 391.6 437.6 L 391.9 439.4 L 395.3 441.7 L 397.8 438.6 L 397.5 441.0 L 394.9 443.4 L 397.0 448.7 L 392.3 452.5 L 385.6 453.2 L 381.5 450.0 L 382.6 444.6 L 384.3 443.6 L 383.6 438.6 L 380.6 435.6 L 381.3 432.1 L 379.6 432.2 L 375.4 426.9 L 372.7 426.4 L 374.0 426.6 L 373.0 425.4 L 374.3 425.3 L 370.5 421.8 L 367.8 422.3 L 367.3 420.2 L 365.0 419.2 L 363.5 420.2 L 361.5 418.4 L 360.4 418.6 L 361.5 421.9 L 359.5 420.0 L 358.5 421.9 L 358.3 419.6 L 357.7 421.5 L 356.4 420.6 L 357.2 420.0 L 352.2 418.1 L 352.1 419.9 L 349.4 418.6 L 347.1 420.9 L 346.5 419.9 L 346.1 421.6 L 344.6 421.5 L 343.2 423.5 L 344.4 425.6 L 342.6 425.0 L 342.8 427.3 L 341.7 426.3 L 342.8 430.1 L 341.6 431.6 L 340.2 431.9 L 340.3 429.6 L 338.0 430.7 L 338.3 423.9 L 337.1 424.1 L 336.8 427.2 L 333.4 428.4 L 333.7 429.8 L 332.3 428.7 L 333.9 432.4 L 339.2 435.4 L 339.3 436.6 L 341.2 436.5 L 339.5 438.1 L 339.8 439.9 L 333.2 437.9 L 336.7 440.8 L 336.0 443.5 L 328.6 441.9 L 318.5 437.4 L 308.6 428.7 L 309.6 423.8 L 307.9 422.3 L 307.9 419.4 L 304.0 415.2 L 301.0 401.2 L 301.9 399.3 L 302.2 400.9 L 305.2 398.4 L 308.3 398.7 L 300.9 391.4 L 301.5 390.0 L 295.5 378.7 L 294.1 371.7 L 290.5 369.6 L 288.1 363.0 L 289.4 360.5 L 291.4 361.4 L 293.8 358.5 L 294.8 352.5 L 301.7 345.6 L 301.6 344.3 L 300.1 344.2 L 301.3 342.3 L 303.0 342.4 L 302.9 339.9 L 299.4 339.7 L 298.6 338.5 L 298.3 331.5 L 308.8 322.0 L 310.8 322.5 L 316.0 319.1 L 319.6 318.9 L 324.2 315.9 L 327.5 315.3 L 326.7 313.4 L 328.3 311.2 L 330.4 311.3 L 330.7 312.7 L 322.5 324.3 L 327.2 320.8 L 327.0 319.2 L 334.5 312.7 L 336.2 308.6 L 333.9 309.7 L 333.1 309.0 L 336.7 302.5 L 335.4 303.9 L 334.2 301.7 L 339.8 295.1 L 349.0 276.4 L 349.1 271.4 L 352.6 264.7 L 351.9 262.7 L 348.0 264.4 L 347.8 263.4 L 349.4 263.3 L 346.4 262.3 L 347.2 258.2 L 346.1 254.7 L 347.0 254.4 L 347.7 256.6 L 347.9 255.4 L 345.9 251.5 L 345.0 251.1 L 345.4 253.9 L 343.9 250.4 L 339.5 251.5 L 339.0 249.9 L 336.8 249.7 L 337.0 247.1 L 334.5 243.4 L 332.2 236.0 L 332.5 231.1 L 330.7 226.4 L 333.7 218.9 L 332.5 209.4 L 340.0 202.0 L 341.9 197.0 L 341.0 193.1 L 337.7 190.3 L 335.7 185.1 L 331.3 186.0 L 330.5 192.7 L 328.7 192.9 L 324.5 197.7 L 317.7 199.4 L 302.0 194.7 L 276.4 179.6 L 269.2 179.6 L 264.1 183.1 L 261.5 182.2 L 259.1 178.1 Z"></path>
+        <g id="zoneLayer"></g>
+        <g id="towerLayer"></g>
+      </svg>
+    </div>
+  </section>
+
+  <section class="card snapshot">
+    <div class="panel-head" style="margin-bottom:0">
+      <div>
+        <h2>Network Snapshot</h2>
+        <div class="panel-sub">Live tower performance and regional availability for the Philippines network.</div>
+      </div>
+    </div>
+    <div class="line"><span>National Coverage</span><strong id="coverageValue">0%</strong></div>
+    <div class="meter"><span id="coverageBar" style="width:0%"></span></div>
+    <div class="line"><span>Critical Zones Active</span><strong id="zoneValue">0</strong></div>
+    <div class="line"><span>Primary Tower Type</span><strong id="typeValue">Macro</strong></div>
+    <div class="pills">
+      <span class="pill online">Online</span>
+      <span class="pill degraded">Degraded</span>
+      <span class="pill offline">Offline</span>
+      <span class="pill maintenance">Maintenance</span>
+    </div>
+    <div class="line"><span>Top Coverage Zone</span><strong id="snapshotTopZone">--</strong></div>
+    <div class="line"><span>Latest Check-In</span><strong id="snapshotLatestCheck">--</strong></div>
+    <div class="line"><span>Maintenance Queue</span><strong id="snapshotMaintenanceQueue">0 towers</strong></div>
+  </section>
+
+  <section class="panel registry-panel">
+    <div class="panel-head">
+      <div>
+        <h2>Live Tower Registry</h2>
+        <div class="panel-sub">Use Edit to load any tower back into the form and update it in place without leaving the dashboard.</div>
+      </div>
+    </div>
+    <div id="towerRegistry" class="registry-list"></div>
+  </section>
+</div>
+
+<div class="modal-shell" id="zoneModal" hidden>
+  <div class="modal-backdrop" data-close-modal="true"></div>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <button type="button" class="modal-close" id="closeZoneModal" aria-label="Close zone details"></button>
+    <div class="modal-eyebrow" id="modalEyebrow">Coverage Zone</div>
+    <h3 id="modalTitle">Zone Details</h3>
+    <div class="modal-copy" id="modalCopy"></div>
+    <div class="modal-stats" id="modalStats"></div>
+    <div class="modal-focus" id="modalFocus"></div>
+  </div>
+</div>
+
+<div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="true"></div>
+
+<script>
+(function(){
+  var storageKey = 'towers-philippine-dashboard-v4';
+function overlayShiftX(){
+    return isCompactLayout() ? -66 : -88;
+  }
+  var zoneCoordinates = {
+    Luzon:{x:324,y:420},
+    Visayas:{x:505,y:596},
+    Mindanao:{x:578,y:792},
+    Palawan:{x:203,y:670}
+  };
+  var zoneMeta = {
+    Luzon:{ labelDx:22, labelDy:4, subDx:22, subDy:22, anchor:'start', copy:'Metro Manila, Central Luzon, and the northern backbone are routing through the Luzon tower cluster.' },
+    Visayas:{ labelDx:22, labelDy:4, subDx:22, subDy:22, anchor:'start', copy:'Inter-island traffic between Cebu, Iloilo, and neighboring corridors is handled by the Visayas tower cluster.' },
+    Mindanao:{ labelDx:22, labelDy:4, subDx:22, subDy:22, anchor:'start', copy:'Mindanao coverage tracks regional availability through the Davao gateway and adjacent uplink routes.' },
+    Palawan:{ labelDx:22, labelDy:4, subDx:22, subDy:22, anchor:'start', copy:'Palawan coverage monitors coastal resilience, western relay availability, and maintenance recovery windows.' }
+  };
+  var towerPlacements = {
+    'TWR-001':{ x:324, topY:378, anchor:'start' },
+    'TWR-002':{ x:505, topY:554, anchor:'start' },
+    'TWR-003':{ x:578, topY:746, anchor:'start' },
+    'TWR-004':{ x:203, topY:622, anchor:'start' }
+  };
+  var zoneOffsets = {
+    Luzon:{
+      slots:[
+        { dx:6, dy:-108, anchor:'start' },
+        { dx:48, dy:-76, anchor:'start' },
+        { dx:84, dy:-42, anchor:'start' },
+        { dx:40, dy:-12, anchor:'start' }
+      ]
+    },
+    Visayas:{
+      slots:[
+        { dx:10, dy:-96, anchor:'start' },
+        { dx:52, dy:-60, anchor:'start' },
+        { dx:88, dy:-26, anchor:'start' },
+        { dx:44, dy:8, anchor:'start' }
+      ]
+    },
+    Mindanao:{
+      slots:[
+        { dx:8, dy:-98, anchor:'start' },
+        { dx:48, dy:-64, anchor:'start' },
+        { dx:82, dy:-28, anchor:'start' },
+        { dx:40, dy:6, anchor:'start' }
+      ]
+    },
+    Palawan:{
+      slots:[
+        { dx:8, dy:-96, anchor:'start' },
+        { dx:50, dy:-60, anchor:'start' },
+        { dx:82, dy:-24, anchor:'start' },
+        { dx:42, dy:12, anchor:'start' }
+      ]
+    }
+  };
+  var seedData = [
+    { id:'TWR-001', name:'Manila Core Tower', type:'Macro', status:'Online', zone:'Luzon', province:'Metro Manila', city:'City of Manila', region:'NCR - National Capital Region', lat:14.5995, lon:120.9842, signal:96, contact:'2026-04-23T20:45' },
+    { id:'TWR-002', name:'Cebu Link Tower', type:'Relay', status:'Degraded', zone:'Visayas', province:'Cebu', city:'Cebu City', region:'Region VII - Central Visayas', lat:10.3157, lon:123.8854, signal:72, contact:'2026-04-23T19:55' },
+    { id:'TWR-003', name:'Davao Gateway Tower', type:'Gateway', status:'Online', zone:'Mindanao', province:'Davao del Sur', city:'Davao City', region:'Region XI - Davao Region', lat:7.1907, lon:125.4553, signal:88, contact:'2026-04-23T20:30' },
+    { id:'TWR-004', name:'Puerto Princesa Coastal Tower', type:'Coastal', status:'Maintenance', zone:'Palawan', province:'Palawan', city:'Puerto Princesa City', region:'Region IV-B - MIMAROPA Region', lat:9.7392, lon:118.7384, signal:0, contact:'2026-04-23T18:10' }
+  ];
+  var locationCatalog = {
+    Luzon:{
+      'NCR - National Capital Region':{
+        'Metro Manila':{ lat:14.5965, lon:120.9789, localities:[
+          { name:'City of Manila', lat:14.5995, lon:120.9842 },
+          { name:'Quezon City', lat:14.6760, lon:121.0437 },
+          { name:'City of Makati', lat:14.5547, lon:121.0244 },
+          { name:'Pasig City', lat:14.5764, lon:121.0851 }
+        ] }
+      },
+      'CAR - Cordillera Administrative Region':{
+        Abra:{ lat:17.5977, lon:120.6155, localities:[
+          { name:'Bangued', lat:17.5977, lon:120.6155 }
+        ] },
+        Apayao:{ lat:18.0249, lon:121.1817, localities:[
+          { name:'Kabugao', lat:18.0249, lon:121.1817 }
+        ] },
+        Benguet:{ lat:16.4023, lon:120.5960, localities:[
+          { name:'Baguio City', lat:16.4023, lon:120.5960 },
+          { name:'La Trinidad', lat:16.4550, lon:120.5876 }
+        ] },
+        Kalinga:{ lat:17.4129, lon:121.4443, localities:[
+          { name:'Tabuk City', lat:17.4129, lon:121.4443 }
+        ] },
+        'Mountain Province':{ lat:17.0891, lon:120.9780, localities:[
+          { name:'Bontoc', lat:17.0891, lon:120.9780 }
+        ] },
+        Ifugao:{ lat:16.8331, lon:121.1710, localities:[
+          { name:'Lagawe', lat:16.8003, lon:121.1192 }
+        ] }
+      },
+      'Region I - Ilocos Region':{
+        'Ilocos Norte':{ lat:18.1978, lon:120.5951, localities:[
+          { name:'Laoag City', lat:18.1978, lon:120.5951 }
+        ] },
+        'Ilocos Sur':{ lat:17.5747, lon:120.3869, localities:[
+          { name:'Vigan City', lat:17.5747, lon:120.3869 }
+        ] },
+        'La Union':{ lat:16.6159, lon:120.3187, localities:[
+          { name:'City of San Fernando', lat:16.6159, lon:120.3187 }
+        ] },
+        Pangasinan:{ lat:16.0430, lon:120.3333, localities:[
+          { name:'Dagupan City', lat:16.0430, lon:120.3333 }
+        ] }
+      },
+      'Region II - Cagayan Valley':{
+        Batanes:{ lat:20.4487, lon:121.9709, localities:[
+          { name:'Basco', lat:20.4487, lon:121.9709 }
+        ] },
+        Cagayan:{ lat:17.6132, lon:121.7270, localities:[
+          { name:'Tuguegarao City', lat:17.6132, lon:121.7270 }
+        ] },
+        Isabela:{ lat:17.1485, lon:121.8892, localities:[
+          { name:'City of Ilagan', lat:17.1485, lon:121.8892 },
+          { name:'Cauayan City', lat:16.9301, lon:121.7729 }
+        ] },
+        'Nueva Vizcaya':{ lat:16.4812, lon:121.1497, localities:[
+          { name:'Bayombong', lat:16.4812, lon:121.1497 }
+        ] },
+        Quirino:{ lat:16.5166, lon:121.5870, localities:[
+          { name:'Cabarroguis', lat:16.5118, lon:121.5219 }
+        ] }
+      },
+      'Region III - Central Luzon':{
+        Aurora:{ lat:15.7580, lon:121.5606, localities:[
+          { name:'Baler', lat:15.7580, lon:121.5606 }
+        ] },
+        Bataan:{ lat:14.6760, lon:120.5363, localities:[
+          { name:'City of Balanga', lat:14.6760, lon:120.5363 }
+        ] },
+        Bulacan:{ lat:14.8441, lon:120.8106, localities:[
+          { name:'City of Malolos', lat:14.8441, lon:120.8106 }
+        ] },
+        'Nueva Ecija':{ lat:15.4866, lon:120.9660, localities:[
+          { name:'Cabanatuan City', lat:15.4866, lon:120.9660 }
+        ] },
+        Pampanga:{ lat:15.0343, lon:120.6847, localities:[
+          { name:'City of San Fernando', lat:15.0343, lon:120.6847 },
+          { name:'Angeles City', lat:15.1450, lon:120.5887 }
+        ] },
+        Tarlac:{ lat:15.4802, lon:120.5979, localities:[
+          { name:'Tarlac City', lat:15.4802, lon:120.5979 }
+        ] },
+        Zambales:{ lat:14.8386, lon:120.2842, localities:[
+          { name:'Olongapo City', lat:14.8386, lon:120.2842 }
+        ] }
+      },
+      'Region IV-A - CALABARZON':{
+        Cavite:{ lat:14.4297, lon:120.9367, localities:[
+          { name:'Imus City', lat:14.4297, lon:120.9367 }
+        ] },
+        Laguna:{ lat:14.2117, lon:121.1653, localities:[
+          { name:'City of Calamba', lat:14.2117, lon:121.1653 }
+        ] },
+        Batangas:{ lat:13.7565, lon:121.0583, localities:[
+          { name:'Batangas City', lat:13.7565, lon:121.0583 }
+        ] },
+        Rizal:{ lat:14.6255, lon:121.1245, localities:[
+          { name:'Antipolo City', lat:14.6255, lon:121.1245 }
+        ] },
+        Quezon:{ lat:13.9411, lon:121.6142, localities:[
+          { name:'Lucena City', lat:13.9411, lon:121.6142 }
+        ] }
+      },
+      'Region V - Bicol Region':{
+        Albay:{ lat:13.1391, lon:123.7438, localities:[
+          { name:'Legazpi City', lat:13.1391, lon:123.7438 }
+        ] },
+        'Camarines Norte':{ lat:14.1122, lon:122.9553, localities:[
+          { name:'Daet', lat:14.1122, lon:122.9553 }
+        ] },
+        'Camarines Sur':{ lat:13.6218, lon:123.1948, localities:[
+          { name:'Naga City', lat:13.6218, lon:123.1948 }
+        ] },
+        Catanduanes:{ lat:13.5849, lon:124.2374, localities:[
+          { name:'Virac', lat:13.5849, lon:124.2374 }
+        ] },
+        Sorsogon:{ lat:12.9714, lon:124.0053, localities:[
+          { name:'Sorsogon City', lat:12.9714, lon:124.0053 }
+        ] },
+        Masbate:{ lat:12.3714, lon:123.6247, localities:[
+          { name:'Masbate City', lat:12.3714, lon:123.6247 }
+        ] }
+      }
+    },
+    Visayas:{
+      'Region VI - Western Visayas':{
+        Aklan:{ lat:11.7061, lon:122.3648, localities:[
+          { name:'Kalibo', lat:11.7061, lon:122.3648 }
+        ] },
+        Antique:{ lat:10.7480, lon:121.9410, localities:[
+          { name:'San Jose de Buenavista', lat:10.7480, lon:121.9410 }
+        ] },
+        Capiz:{ lat:11.5853, lon:122.7511, localities:[
+          { name:'Roxas City', lat:11.5853, lon:122.7511 }
+        ] },
+        Iloilo:{ lat:10.7202, lon:122.5621, localities:[
+          { name:'Iloilo City', lat:10.7202, lon:122.5621 }
+        ] },
+        Guimaras:{ lat:10.5946, lon:122.5963, localities:[
+          { name:'Jordan', lat:10.5946, lon:122.5963 }
+        ] }
+      },
+      'Region VII - Central Visayas':{
+        Bohol:{ lat:9.6498, lon:123.8539, localities:[
+          { name:'Tagbilaran City', lat:9.6498, lon:123.8539 }
+        ] },
+        Cebu:{ lat:10.3157, lon:123.8854, localities:[
+          { name:'Cebu City', lat:10.3157, lon:123.8854 },
+          { name:'City of Mandaue', lat:10.3236, lon:123.9229 },
+          { name:'Lapu-Lapu City', lat:10.3103, lon:123.9494 }
+        ] }
+      },
+      'Region VIII - Eastern Visayas':{
+        Biliran:{ lat:11.5600, lon:124.3975, localities:[
+          { name:'Naval', lat:11.5600, lon:124.3975 }
+        ] },
+        Leyte:{ lat:11.2433, lon:125.0040, localities:[
+          { name:'Tacloban City', lat:11.2433, lon:125.0040 },
+          { name:'Ormoc City', lat:11.0050, lon:124.6075 }
+        ] },
+        'Northern Samar':{ lat:12.5020, lon:124.6377, localities:[
+          { name:'Catarman', lat:12.5020, lon:124.6377 }
+        ] },
+        Samar:{ lat:11.7753, lon:124.8862, localities:[
+          { name:'Catbalogan City', lat:11.7753, lon:124.8862 }
+        ] },
+        'Eastern Samar':{ lat:11.6081, lon:125.4314, localities:[
+          { name:'Borongan City', lat:11.6081, lon:125.4314 }
+        ] },
+        'Southern Leyte':{ lat:10.1314, lon:124.8450, localities:[
+          { name:'Maasin City', lat:10.1314, lon:124.8450 }
+        ] }
+      },
+      'NIR - Negros Island Region':{
+        'Negros Occidental':{ lat:10.6765, lon:122.9509, localities:[
+          { name:'Bacolod City', lat:10.6765, lon:122.9509 }
+        ] },
+        'Negros Oriental':{ lat:9.3076, lon:123.3054, localities:[
+          { name:'Dumaguete City', lat:9.3076, lon:123.3054 }
+        ] },
+        Siquijor:{ lat:9.2142, lon:123.5159, localities:[
+          { name:'Siquijor', lat:9.2142, lon:123.5159 }
+        ] }
+      }
+    },
+    Mindanao:{
+      'Region IX - Zamboanga Peninsula':{
+        'Zamboanga del Norte':{ lat:8.5885, lon:123.3409, localities:[
+          { name:'Dipolog City', lat:8.5885, lon:123.3409 }
+        ] },
+        'Zamboanga del Sur':{ lat:7.8257, lon:123.4370, localities:[
+          { name:'Pagadian City', lat:7.8257, lon:123.4370 }
+        ] },
+        'Zamboanga Sibugay':{ lat:7.7844, lon:122.5861, localities:[
+          { name:'Ipil', lat:7.7844, lon:122.5861 }
+        ] }
+      },
+      'Region X - Northern Mindanao':{
+        Bukidnon:{ lat:8.1620, lon:125.1277, localities:[
+          { name:'Malaybalay City', lat:8.1620, lon:125.1277 }
+        ] },
+        Camiguin:{ lat:9.2500, lon:124.7167, localities:[
+          { name:'Mambajao', lat:9.2500, lon:124.7167 }
+        ] },
+        'Lanao del Norte':{ lat:8.2280, lon:124.2452, localities:[
+          { name:'Iligan City', lat:8.2280, lon:124.2452 }
+        ] },
+        'Misamis Occidental':{ lat:8.1481, lon:123.8405, localities:[
+          { name:'Ozamiz City', lat:8.1481, lon:123.8405 }
+        ] },
+        'Misamis Oriental':{ lat:8.4542, lon:124.6319, localities:[
+          { name:'Cagayan de Oro City', lat:8.4542, lon:124.6319 }
+        ] }
+      },
+      'Region XI - Davao Region':{
+        'Davao del Norte':{ lat:7.4478, lon:125.8078, localities:[
+          { name:'Tagum City', lat:7.4478, lon:125.8078 }
+        ] },
+        'Davao del Sur':{ lat:7.1907, lon:125.4553, localities:[
+          { name:'Davao City', lat:7.1907, lon:125.4553 },
+          { name:'Digos City', lat:6.7492, lon:125.3560 }
+        ] },
+        'Davao de Oro':{ lat:7.4473, lon:125.8070, localities:[
+          { name:'Nabunturan', lat:7.6078, lon:125.9664 }
+        ] },
+        'Davao Oriental':{ lat:6.9551, lon:126.2167, localities:[
+          { name:'Mati City', lat:6.9551, lon:126.2167 }
+        ] },
+        'Davao Occidental':{ lat:6.5950, lon:125.4220, localities:[
+          { name:'Malita', lat:6.4150, lon:125.6117 }
+        ] }
+      },
+      'Region XII - SOCCSKSARGEN':{
+        Cotabato:{ lat:7.0083, lon:125.0897, localities:[
+          { name:'Kidapawan City', lat:7.0083, lon:125.0897 }
+        ] },
+        Sarangani:{ lat:6.1018, lon:125.2919, localities:[
+          { name:'Alabel', lat:6.1018, lon:125.2919 }
+        ] },
+        'South Cotabato':{ lat:6.4970, lon:124.8471, localities:[
+          { name:'Koronadal City', lat:6.4970, lon:124.8471 }
+        ] },
+        'Sultan Kudarat':{ lat:6.6874, lon:124.6763, localities:[
+          { name:'Tacurong City', lat:6.6874, lon:124.6763 }
+        ] }
+      },
+      'Region XIII - Caraga':{
+        'Agusan del Norte':{ lat:8.9492, lon:125.5436, localities:[
+          { name:'Butuan City', lat:8.9492, lon:125.5436 }
+        ] },
+        'Agusan del Sur':{ lat:8.7189, lon:125.7489, localities:[
+          { name:'Bayugan City', lat:8.7561, lon:125.7678 }
+        ] },
+        'Dinagat Islands':{ lat:10.0093, lon:125.5720, localities:[
+          { name:'San Jose', lat:10.0093, lon:125.5720 }
+        ] },
+        'Surigao del Norte':{ lat:9.7845, lon:125.4880, localities:[
+          { name:'Surigao City', lat:9.7845, lon:125.4880 }
+        ] },
+        'Surigao del Sur':{ lat:9.0780, lon:126.1986, localities:[
+          { name:'Tandag City', lat:9.0780, lon:126.1986 }
+        ] }
+      },
+      'BARMM - Bangsamoro Autonomous Region in Muslim Mindanao':{
+        Basilan:{ lat:6.6480, lon:122.1387, localities:[
+          { name:'Lamitan City', lat:6.6480, lon:122.1387 }
+        ] },
+        'Lanao del Sur':{ lat:8.0034, lon:124.2839, localities:[
+          { name:'Marawi City', lat:8.0034, lon:124.2839 }
+        ] },
+        'Maguindanao del Norte':{ lat:7.2047, lon:124.2310, localities:[
+          { name:'Datu Odin Sinsuat', lat:7.1889, lon:124.2086 }
+        ] },
+        'Maguindanao del Sur':{ lat:6.8624, lon:124.8739, localities:[
+          { name:'Buluan', lat:6.8624, lon:124.8739 }
+        ] },
+        Sulu:{ lat:6.0522, lon:121.0027, localities:[
+          { name:'Jolo', lat:6.0522, lon:121.0027 }
+        ] },
+        'Tawi-Tawi':{ lat:5.0328, lon:119.7731, localities:[
+          { name:'Bongao', lat:5.0328, lon:119.7731 }
+        ] }
+      }
+    },
+    Palawan:{
+      'Region IV-B - MIMAROPA Region':{
+        Marinduque:{ lat:13.4467, lon:121.8408, localities:[
+          { name:'Boac', lat:13.4467, lon:121.8408 }
+        ] },
+        'Occidental Mindoro':{ lat:13.2231, lon:120.5960, localities:[
+          { name:'Mamburao', lat:13.2231, lon:120.5960 }
+        ] },
+        'Oriental Mindoro':{ lat:13.4117, lon:121.1803, localities:[
+          { name:'Calapan City', lat:13.4117, lon:121.1803 }
+        ] },
+        Palawan:{ lat:9.7392, lon:118.7384, localities:[
+          { name:'Puerto Princesa City', lat:9.7392, lon:118.7384 },
+          { name:'Coron', lat:11.9986, lon:120.2043 },
+          { name:'El Nido', lat:11.1929, lon:119.3958 },
+          { name:"Brooke's Point", lat:8.7818, lon:117.8141 }
+        ] },
+        Romblon:{ lat:12.5778, lon:122.2692, localities:[
+          { name:'Romblon', lat:12.5778, lon:122.2692 }
+        ] }
+      }
+    }
+  };
+  var regionAliases = {
+    'Metro Manila':'NCR - National Capital Region',
+    NCR:'NCR - National Capital Region',
+    'National Capital Region':'NCR - National Capital Region',
+    'NCR / Metro Manila':'NCR - National Capital Region',
+    CAR:'CAR - Cordillera Administrative Region',
+    'Cordillera Administrative Region':'CAR - Cordillera Administrative Region',
+    'Ilocos Region':'Region I - Ilocos Region',
+    'Cagayan Valley':'Region II - Cagayan Valley',
+    'Central Luzon':'Region III - Central Luzon',
+    CALABARZON:'Region IV-A - CALABARZON',
+    'Bicol Region':'Region V - Bicol Region',
+    MIMAROPA:'Region IV-B - MIMAROPA Region',
+    'Western Visayas':'Region VI - Western Visayas',
+    'Central Visayas':'Region VII - Central Visayas',
+    'Eastern Visayas':'Region VIII - Eastern Visayas',
+    NIR:'NIR - Negros Island Region',
+    'Negros Island Region':'NIR - Negros Island Region',
+    'Zamboanga Peninsula':'Region IX - Zamboanga Peninsula',
+    'Northern Mindanao':'Region X - Northern Mindanao',
+    'Davao Region':'Region XI - Davao Region',
+    SOCCSKSARGEN:'Region XII - SOCCSKSARGEN',
+    Caraga:'Region XIII - Caraga',
+    BARMM:'BARMM - Bangsamoro Autonomous Region in Muslim Mindanao'
+  };
+  var seedDefaultsById = seedData.reduce(function(map, item){
+    map[item.id] = item;
+    return map;
+  }, {});
+  var towers = [];
+  var localModalLock = null;
+
+  function isCompactLayout(){ return !!window.matchMedia && window.matchMedia('(max-width:1260px)').matches; }
+  function text(value){ return String(value == null ? '' : value); }
+  function splitContactParts(value){
+    var raw = text(value).trim();
+    if(!raw){ return { date:'', time:'' }; }
+    if(raw.indexOf('T') >= 0){
+      var isoParts = raw.split('T');
+      return { date:isoParts[0] || '', time:(isoParts[1] || '').slice(0,5) };
+    }
+    var normalized = raw.replace(/\s+/g,' ').trim();
+    var match = normalized.match(/^(\d{4}-\d{2}-\d{2})(?:\s+(\d{1,2}:\d{2}))?$/);
+    if(match){
+      return { date:match[1], time:match[2] || '' };
+    }
+    return { date:raw.slice(0,10), time:'' };
+  }
+  function combineContactParts(dateValue, timeValue){
+    var date = text(dateValue).trim();
+    var time = text(timeValue).trim();
+    if(!date){ return ''; }
+    return time ? (date + 'T' + time) : date;
+  }
+  function formatContact(value){
+    var parts = splitContactParts(value);
+    return parts.time ? (parts.date + ' ' + parts.time) : parts.date;
+  }
+  function nowLocalParts(){
+    var now = new Date();
+    var local = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
+    var iso = local.toISOString();
+    return {
+      date:iso.slice(0,10),
+      time:iso.slice(11,16)
+    };
+  }
+  function normalizeNumber(value){
+    if(value === '' || value == null){ return null; }
+    var num = Number(value);
+    return isFinite(num) ? num : null;
+  }
+  function zoneRegions(zone){
+    return Object.keys(locationCatalog[zone] || {});
+  }
+  function canonicalRegion(zone, region){
+    var current = text(region);
+    if(!current){ return ''; }
+    if(locationCatalog[zone] && locationCatalog[zone][current]){ return current; }
+    var alias = regionAliases[current] || current;
+    if(locationCatalog[zone] && locationCatalog[zone][alias]){ return alias; }
+    var regions = zoneRegions(zone);
+    var lower = current.toLowerCase();
+    for(var i = 0; i < regions.length; i++){
+      if(regions[i].toLowerCase() === lower){ return regions[i]; }
+    }
+    return current;
+  }
+  function provinceKeys(zone, region){
+    var catalog = locationCatalog[zone] || {};
+    return Object.keys(catalog[canonicalRegion(zone, region)] || {});
+  }
+  function canonicalProvince(zone, region, province){
+    var current = text(province);
+    if(!current){ return ''; }
+    var provinces = provinceKeys(zone, region);
+    if(provinces.indexOf(current) >= 0){ return current; }
+    var lower = current.toLowerCase();
+    for(var i = 0; i < provinces.length; i++){
+      if(provinces[i].toLowerCase() === lower){ return provinces[i]; }
+    }
+    return current;
+  }
+  function provinceRecord(zone, region, province){
+    var catalog = locationCatalog[zone] || {};
+    var regionKey = canonicalRegion(zone, region);
+    var provinceKey = canonicalProvince(zone, regionKey, province);
+    return (catalog[regionKey] || {})[provinceKey] || null;
+  }
+  function cityEntries(zone, region, province){
+    var record = provinceRecord(zone, region, province);
+    return record ? (record.localities || []) : [];
+  }
+  function resolveLocation(zone, region, province, city){
+    var regionKey = canonicalRegion(zone, region);
+    var provinceKey = canonicalProvince(zone, regionKey, province);
+    var record = provinceRecord(zone, regionKey, provinceKey);
+    if(!record){ return null; }
+    var currentCity = text(city).trim();
+    if(!currentCity){
+      return {
+        region:regionKey,
+        province:provinceKey,
+        city:'',
+        lat:record.lat,
+        lon:record.lon
+      };
+    }
+    var cities = record.localities || [];
+    for(var i = 0; i < cities.length; i++){
+      if(cities[i].name === currentCity || cities[i].name.toLowerCase() === currentCity.toLowerCase()){
+        return {
+          region:regionKey,
+          province:provinceKey,
+          city:cities[i].name,
+          lat:cities[i].lat,
+          lon:cities[i].lon
+        };
+      }
+    }
+    return null;
+  }
+  function setSelectOptions(select, values, placeholder, selectedValue, disabled){
+    var selected = text(selectedValue);
+    var html = ['<option value="">' + placeholder + '</option>'];
+    var hasSelected = false;
+    values.forEach(function(value){
+      var current = text(value);
+      if(current === selected){ hasSelected = true; }
+      html.push('<option value="' + current.replace(/"/g,'&quot;') + '">' + current + '</option>');
+    });
+    if(selected && !hasSelected){
+      html.push('<option value="' + selected.replace(/"/g,'&quot;') + '">' + selected + '</option>');
+    }
+    select.innerHTML = html.join('');
+    select.disabled = !!disabled;
+    select.value = selected;
+  }
+  function populateRegionOptions(zone, selectedRegion){
+    var regions = zoneRegions(zone);
+    var currentRegion = canonicalRegion(zone, selectedRegion);
+    setSelectOptions(document.getElementById('towerRegion'), regions, zone ? 'Select region' : 'Select coverage zone first', currentRegion, !zone);
+  }
+  function populateProvinceOptions(zone, region, selectedProvince){
+    var provinces = provinceKeys(zone, region);
+    var currentProvince = canonicalProvince(zone, region, selectedProvince);
+    setSelectOptions(document.getElementById('towerProvince'), provinces, region ? 'Select province' : 'Select region first', currentProvince, !region);
+  }
+  function populateCityOptions(zone, region, province, selectedCity){
+    var cities = cityEntries(zone, region, province).map(function(entry){ return entry.name; });
+    setSelectOptions(document.getElementById('towerCity'), cities, province ? 'Select city / municipality' : 'Select province first', selectedCity, !province);
+  }
+  function syncLocationInputs(selectedRegion, selectedProvince, selectedCity){
+    var zone = document.getElementById('towerZone').value;
+    var currentRegion = canonicalRegion(zone, selectedRegion);
+    var currentProvince = canonicalProvince(zone, currentRegion, selectedProvince);
+    populateRegionOptions(zone, currentRegion);
+    populateProvinceOptions(zone, currentRegion, currentProvince);
+    populateCityOptions(zone, currentRegion, currentProvince, selectedCity);
+  }
+  function projectCoordinates(lat, lon){
+    if(lat == null || lon == null){ return null; }
+    return {
+      x:Math.round(((56.7912450032172 * lon) + (-0.2591725616331999 * lat) - 6538.417147655779) * 10) / 10,
+      y:Math.round(((-4.076644469444707 * lon) + (-52.09102803907675 * lat) + 1662.8728686378372) * 10) / 10
+    };
+  }
+  function mapLabel(value, limit){
+    return text(value);
+  }
+
+  function tidyHostChrome(){
+    try {
+      var doc = window.parent && window.parent.document;
+      if(!doc){ return; }
+      var head = doc.head || doc.getElementsByTagName('head')[0];
+      if(head && !doc.getElementById('towers-host-fix')){
+        var style = doc.createElement('style');
+        style.id = 'towers-host-fix';
+        style.textContent = 'body{background:#060b16!important;margin:0!important}.HeaderContainer,#HEADER_MPAGE,#TABLESIDEBARCONTAINER_MPAGE,#SIDEBARMENU_MPAGEContainer{display:none!important}#MAINTABLE_MPAGE{padding:0!important;max-width:none!important;width:100%!important}#CONTENT_MPAGE{margin:0!important;padding:0!important;max-width:100%!important;width:100%!important}.expandible-container,#CONTENT_MPAGE>.row,#CONTENT_MPAGE>.row>.col-xs-12,.gx-content-placeholder,.gx-ct-body,.gx-ct-body>.Section{padding:0!important;margin:0!important;max-width:100%!important;width:100%!important}.gx-ct-body{background:transparent!important}';
+        head.appendChild(style);
+      }
+      doc.title = 'Towers Philippine Coverage Dashboard';
+      var header = doc.getElementById('HEADER_MPAGE');
+      if(header && header.parentElement){ header.parentElement.style.display = 'none'; }
+      if(header){ header.style.display = 'none'; }
+      var sidebar = doc.getElementById('TABLESIDEBARCONTAINER_MPAGE');
+      if(sidebar && sidebar.parentElement){ sidebar.parentElement.style.display = 'none'; }
+      if(sidebar){ sidebar.style.display = 'none'; }
+      applyHostLayout();
+    } catch(e){}
+  }
+
+  function applyHostLayout(){
+    try {
+      var doc = window.parent && window.parent.document;
+      if(!doc){ return; }
+      var compact = isCompactLayout();
+      var content = doc.getElementById('CONTENT_MPAGE');
+      var contentCol = content && content.parentElement;
+      if(doc.documentElement){
+        doc.documentElement.style.height = compact ? 'auto' : '100%';
+        doc.documentElement.style.overflow = compact ? 'auto' : 'hidden';
+      }
+      if(doc.body){
+        doc.body.style.height = compact ? 'auto' : '100%';
+        doc.body.style.overflow = compact ? 'auto' : 'hidden';
+        doc.body.style.margin = '0';
+      }
+      if(content){
+        content.className = '';
+        content.style.margin = '0';
+        content.style.padding = '0';
+        content.style.maxWidth = '100%';
+        content.style.width = '100%';
+        content.style.height = compact ? 'auto' : '100vh';
+        content.style.minHeight = '100vh';
+        content.style.overflow = compact ? 'visible' : 'hidden';
+      }
+      if(contentCol){
+        contentCol.className = 'col-xs-12';
+        contentCol.style.padding = '0';
+        contentCol.style.width = '100%';
+        contentCol.style.height = compact ? 'auto' : '100%';
+        contentCol.style.overflow = compact ? 'visible' : 'hidden';
+      }
+      if(window.frameElement){
+        window.frameElement.style.width = '100%';
+        window.frameElement.style.maxWidth = '100%';
+        window.frameElement.style.border = '0';
+        window.frameElement.style.display = 'block';
+        window.frameElement.style.minHeight = compact ? '' : '100vh';
+        var frameParent = window.frameElement.parentElement;
+        if(frameParent){
+          frameParent.style.width = '100%';
+          frameParent.style.overflow = compact ? 'visible' : 'hidden';
+        }
+      }
+    } catch(e){}
+  }
+
+  function syncFrameHeight(){
+    try {
+      applyHostLayout();
+      if(window.frameElement){
+        if(isCompactLayout()){
+          var modal = document.getElementById('zoneModal');
+          if(modal && !modal.hidden){ return; }
+          var shell = document.querySelector('.shell');
+          var bodyStyle = window.getComputedStyle(document.body);
+          var paddingTop = parseFloat(bodyStyle.paddingTop || 0) || 0;
+          var paddingBottom = parseFloat(bodyStyle.paddingBottom || 0) || 0;
+          var h = shell ? Math.ceil(shell.getBoundingClientRect().height + paddingTop + paddingBottom) : Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+          window.frameElement.style.height = h + 'px';
+        } else {
+          var parentHeight = window.parent && window.parent.innerHeight ? window.parent.innerHeight : window.innerHeight;
+          window.frameElement.style.height = Math.max(860, Math.ceil(parentHeight)) + 'px';
+        }
+      }
+    } catch(e){}
+  }
+
+  var modalViewportLock = null;
+  function lockModalViewport(){
+    try {
+      if(!isCompactLayout() || !window.frameElement || modalViewportLock){ return; }
+      var parentWin = window.parent;
+      var parentDoc = parentWin && parentWin.document;
+      if(!parentDoc){ return; }
+      var frame = window.frameElement;
+      var frameParent = frame.parentElement;
+      var content = parentDoc.getElementById('CONTENT_MPAGE');
+      var contentCol = content && content.parentElement;
+      var parentScrollY = parentWin.pageYOffset || parentDoc.documentElement.scrollTop || (parentDoc.body && parentDoc.body.scrollTop) || 0;
+      var frameTop = frame.getBoundingClientRect().top + parentScrollY;
+      var viewportHeight = Math.ceil(parentWin.innerHeight || window.innerHeight || frame.getBoundingClientRect().height || 0);
+      modalViewportLock = {
+        scrollY: parentScrollY,
+        frameHeight: frame.style.height,
+        frameMinHeight: frame.style.minHeight,
+        frameMaxHeight: frame.style.maxHeight,
+        frameParentOverflow: frameParent ? frameParent.style.overflow : '',
+        contentOverflow: content ? content.style.overflow : '',
+        contentColOverflow: contentCol ? contentCol.style.overflow : '',
+        parentHtmlOverflow: parentDoc.documentElement ? parentDoc.documentElement.style.overflow : '',
+        parentBodyOverflow: parentDoc.body ? parentDoc.body.style.overflow : ''
+      };
+      frame.style.height = viewportHeight + 'px';
+      frame.style.minHeight = viewportHeight + 'px';
+      frame.style.maxHeight = viewportHeight + 'px';
+      parentWin.scrollTo(0, Math.max(0, frameTop));
+      if(parentDoc.documentElement){ parentDoc.documentElement.style.overflow = 'hidden'; }
+      if(parentDoc.body){ parentDoc.body.style.overflow = 'hidden'; }
+      if(content){ content.style.overflow = 'hidden'; }
+      if(contentCol){ contentCol.style.overflow = 'hidden'; }
+      if(frameParent){ frameParent.style.overflow = 'hidden'; }
+    } catch(e){}
+  }
+
+  function unlockModalViewport(){
+    try {
+      if(!modalViewportLock || !window.frameElement){ return; }
+      var parentWin = window.parent;
+      var parentDoc = parentWin && parentWin.document;
+      var frame = window.frameElement;
+      var frameParent = frame.parentElement;
+      var content = parentDoc && parentDoc.getElementById('CONTENT_MPAGE');
+      var contentCol = content && content.parentElement;
+      frame.style.height = modalViewportLock.frameHeight;
+      frame.style.minHeight = modalViewportLock.frameMinHeight;
+      frame.style.maxHeight = modalViewportLock.frameMaxHeight;
+      if(parentDoc && parentDoc.documentElement){ parentDoc.documentElement.style.overflow = modalViewportLock.parentHtmlOverflow; }
+      if(parentDoc && parentDoc.body){ parentDoc.body.style.overflow = modalViewportLock.parentBodyOverflow; }
+      if(content){ content.style.overflow = modalViewportLock.contentOverflow; }
+      if(contentCol){ contentCol.style.overflow = modalViewportLock.contentColOverflow; }
+      if(frameParent){ frameParent.style.overflow = modalViewportLock.frameParentOverflow; }
+      if(parentWin && typeof modalViewportLock.scrollY === 'number'){ parentWin.scrollTo(0, modalViewportLock.scrollY); }
+    } catch(e){}
+    modalViewportLock = null;
+    syncFrameHeight();
+  }
+  function lockLocalModalScroll(){
+    if(!isCompactLayout() || localModalLock){ return; }
+    var scrollY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    localModalLock = {
+      scrollY:scrollY,
+      bodyTop:document.body.style.top
+    };
+    document.body.style.top = (-scrollY) + 'px';
+  }
+
+  function unlockLocalModalScroll(){
+    if(!localModalLock){ return; }
+    document.body.style.top = localModalLock.bodyTop || '';
+    window.scrollTo(0, localModalLock.scrollY || 0);
+    localModalLock = null;
+  }
+
+  function loadState(){
+    try {
+      var raw = localStorage.getItem(storageKey);
+      towers = raw ? JSON.parse(raw) : seedData.slice(0);
+    } catch(e) {
+      towers = seedData.slice(0);
+    }
+    towers = towers.map(function(item){
+      var seed = seedDefaultsById[item.id] || {};
+      var zone = text(item.zone || seed.zone || 'Luzon');
+      var region = canonicalRegion(zone, text(item.region || seed.region));
+      var province = canonicalProvince(zone, region, text(item.province || seed.province));
+      var location = resolveLocation(zone, region, province, text(item.city || seed.city));
+      var contactParts = splitContactParts(text(item.contact || seed.contact || ''));
+      var fallbackParts = nowLocalParts();
+      var hasStoredDate = !!contactParts.date;
+      return {
+        id:text(item.id || seed.id),
+        name:text(item.name || seed.name),
+        type:text(item.type || seed.type || 'Macro'),
+        status:text(item.status || seed.status || 'Online'),
+        zone:zone,
+        city:location ? location.city : text(item.city || seed.city),
+        province:location ? location.province : province,
+        region:location ? location.region : region,
+        lat:normalizeNumber(location ? location.lat : (item.lat != null ? item.lat : seed.lat)),
+        lon:normalizeNumber(location ? location.lon : (item.lon != null ? item.lon : seed.lon)),
+        signal:Math.max(0, Math.min(100, Number(item.signal != null ? item.signal : (seed.signal || 0)))),
+        contact:combineContactParts(contactParts.date || fallbackParts.date, hasStoredDate ? contactParts.time : fallbackParts.time)
+      };
+    });
+  }
+
+  function saveState(){ localStorage.setItem(storageKey, JSON.stringify(towers)); }
+  function statusClass(status){ return text(status).toLowerCase().replace(/[^a-z]+/g,'-'); }
+  function countStatus(name){ return towers.filter(function(item){ return item.status === name; }).length; }
+  function averageSignal(){ if(!towers.length){ return 0; } var total = towers.reduce(function(sum,item){ return sum + Number(item.signal || 0); },0); return Math.round(total / towers.length); }
+  function strongestType(){ var counts={}, winner='Macro', win=-1; towers.forEach(function(item){ counts[item.type]=(counts[item.type]||0)+1; }); Object.keys(counts).forEach(function(key){ if(counts[key] > win){ winner=key; win=counts[key]; } }); return winner; }
+  function activeZones(){ var zones={}; towers.forEach(function(item){ if(item.status !== 'Offline'){ zones[item.zone]=true; } }); return Object.keys(zones).length; }
+  function zoneItems(name){ return towers.filter(function(item){ return item.zone === name; }); }
+  function latestContactValue(){
+    return towers.reduce(function(latest, item){
+      var current = combineContactParts(splitContactParts(item.contact).date, splitContactParts(item.contact).time);
+      return current > latest ? current : latest;
+    }, '');
+  }
+  function topZoneName(){
+    var winner = 'Luzon';
+    var bestSignal = -1;
+    var bestCount = -1;
+    Object.keys(zoneCoordinates).forEach(function(zone){
+      var summary = zoneSummary(zone);
+      if(summary.avgSignal > bestSignal || (summary.avgSignal === bestSignal && summary.total > bestCount)){
+        winner = zone;
+        bestSignal = summary.avgSignal;
+        bestCount = summary.total;
+      }
+    });
+    return winner;
+  }
+
+  function zoneSummary(name){
+    var items = zoneItems(name);
+    var totalSignal = 0;
+    var online = 0;
+    var strongest = items[0] || null;
+    var latest = '';
+    items.forEach(function(item){
+      var signal = Number(item.signal || 0);
+      totalSignal += signal;
+      if(item.status === 'Online'){ online++; }
+      if(!strongest || signal > Number(strongest.signal || 0)){ strongest = item; }
+      if(formatContact(item.contact) > latest){ latest = formatContact(item.contact); }
+    });
+    return {
+      name:name,
+      total:items.length,
+      online:online,
+      alerts:items.filter(function(item){ return item.status !== 'Online'; }).length,
+      avgSignal:items.length ? Math.round(totalSignal / items.length) : 0,
+      strongest:strongest,
+      latest:latest || 'No recent activity',
+      primaryType:(function(){
+        var counts = {};
+        var winner = 'Macro';
+        var win = -1;
+        items.forEach(function(item){ counts[item.type] = (counts[item.type] || 0) + 1; });
+        Object.keys(counts).forEach(function(key){ if(counts[key] > win){ winner = key; win = counts[key]; } });
+        return winner;
+      })()
+    };
+  }
+
+  function badge(status){ return '<span class="pill ' + statusClass(status) + '">' + text(status) + '</span>'; }
+
+  function renderKpis(){
+    var topZone = topZoneName();
+    var latestCheck = formatContact(latestContactValue()) || '--';
+    var maintenanceQueue = countStatus('Maintenance');
+    var liveZones = activeZones();
+    document.getElementById('kpiOnline').textContent = countStatus('Online');
+    document.getElementById('kpiDegraded').textContent = countStatus('Degraded');
+    document.getElementById('kpiSignal').textContent = averageSignal() + '%';
+    document.getElementById('kpiAlerts').textContent = countStatus('Offline') + countStatus('Degraded');
+    document.getElementById('coverageValue').textContent = averageSignal() + '%';
+    document.getElementById('coverageBar').style.width = averageSignal() + '%';
+    document.getElementById('zoneValue').textContent = liveZones;
+    document.getElementById('typeValue').textContent = strongestType();
+    document.getElementById('heroTopZone').textContent = topZone;
+    document.getElementById('heroLatestCheck').textContent = latestCheck;
+    document.getElementById('heroMaintenanceQueue').textContent = maintenanceQueue + (maintenanceQueue === 1 ? ' tower' : ' towers');
+    document.getElementById('heroZoneHealth').textContent = liveZones + ' / ' + Object.keys(zoneCoordinates).length + ' live';
+    document.getElementById('snapshotTopZone').textContent = topZone;
+    document.getElementById('snapshotLatestCheck').textContent = latestCheck;
+    document.getElementById('snapshotMaintenanceQueue').textContent = maintenanceQueue + (maintenanceQueue === 1 ? ' tower' : ' towers');
+  }
+
+  function towerOffset(zone, index){
+    var config = zoneOffsets[zone] || zoneOffsets.Luzon;
+    var slotDefs = config.slots || [];
+    var ring = Math.floor(index / Math.max(slotDefs.length, 1));
+    var slotDef = slotDefs[index % Math.max(slotDefs.length, 1)] || { dx:0, dy:-96, anchor:'start' };
+    return {
+      x:(slotDef.dx || 0) + (ring * 18),
+      y:(slotDef.dy || 0) + (ring * 18),
+      anchor:slotDef.anchor || 'start',
+      labelDx:20,
+      labelDy:0,
+      connectorDx:16,
+      connectorDy:0
+    };
+  }
+
+  function towerPlacement(item, zoneIndex){
+    var lat = normalizeNumber(item.lat);
+    var lon = normalizeNumber(item.lon);
+    var fixed = towerPlacements[item.id];
+    var seed = seedDefaultsById[item.id];
+    var useProjected = lat != null && lon != null && (!fixed || !seed || Math.abs(lat - seed.lat) > 0.0001 || Math.abs(lon - seed.lon) > 0.0001);
+    if(useProjected){
+      var projected = projectCoordinates(lat, lon);
+      if(projected){
+        return {
+          fixed:false,
+          x:projected.x,
+          y:projected.y,
+          anchor:'start',
+          labelDx:20,
+          labelDy:0,
+          connectorDx:16,
+          connectorDy:0
+        };
+      }
+    }
+    if(fixed){
+      return {
+        fixed:true,
+        x:fixed.x,
+        y:fixed.topY + 28,
+        anchor:fixed.anchor || 'start',
+        labelDx:20,
+        labelDy:0,
+        connectorDx:16,
+        connectorDy:0
+      };
+    }
+    var zone = zoneCoordinates[item.zone] || zoneCoordinates.Luzon;
+    var offset = towerOffset(item.zone, zoneIndex);
+    return {
+      fixed:false,
+      x:zone.x + offset.x,
+      y:zone.y + offset.y,
+      anchor:offset.anchor,
+      labelDx:offset.labelDx,
+      labelDy:offset.labelDy,
+      connectorDx:offset.connectorDx,
+      connectorDy:offset.connectorDy
+    };
+  }
+
+  function renderZones(){
+    var layer = document.getElementById('zoneLayer');
+    layer.innerHTML = Object.keys(zoneCoordinates).map(function(name){
+      var meta = zoneMeta[name];
+      var zone = zoneCoordinates[name];
+      var zoneX = zone.x + overlayShiftX();
+      var zoneY = zone.y;
+      var summary = zoneSummary(name);
+      var subcopy = summary.total ? summary.total + (summary.total === 1 ? ' tower' : ' towers') : 'No towers';
+      var labelAnchor = meta.anchor;
+      var labelX = zoneX + meta.labelDx;
+      var subX = zoneX + meta.subDx;
+      var labelY = zoneY + meta.labelDy;
+      var subY = zoneY + meta.subDy;
+      var approxWidth = Math.max(name.length * 11, subcopy.length * 6.2);
+      if(labelAnchor === 'start' && (labelX + approxWidth) > 680){
+        labelAnchor = 'end';
+        labelX = zoneX - 24;
+        subX = labelX;
+      } else if(labelAnchor === 'end' && (labelX - approxWidth) < 72){
+        labelAnchor = 'start';
+        labelX = zoneX + 24;
+        subX = labelX;
+      }
+      return '<g class="zone-hotspot" data-zone="' + name + '" tabindex="0" role="button" aria-label="Open ' + name + ' zone details">' +
+        '<circle class="zone-hit" cx="' + zoneX + '" cy="' + zoneY + '" r="28"></circle>' +
+        '<circle class="zone-core" cx="' + zoneX + '" cy="' + zoneY + '" r="9"></circle>' +
+        '<text class="zone-label" x="' + labelX + '" y="' + labelY + '" text-anchor="' + labelAnchor + '">' + name + '</text>' +
+        '<text class="zone-sub" x="' + subX + '" y="' + subY + '" text-anchor="' + labelAnchor + '">' + subcopy + '</text>' +
+      '</g>';
+    }).join('');
+  }
+
+  function renderMap(){
+    var layer = document.getElementById('towerLayer');
+    var mapMinX = 56;
+    var mapMaxX = 694;
+    var mapMinY = 96;
+    var mapMaxY = 902;
+    layer.innerHTML = '';
+    var perZone = {};
+    towers.forEach(function(item){
+      var zoneIndex = perZone[item.zone] || 0;
+      var placement = towerPlacement(item, zoneIndex);
+      if(!placement.fixed){ perZone[item.zone] = zoneIndex + 1; }
+      var x = Math.max(mapMinX + 18, Math.min(mapMaxX - 18, placement.x + overlayShiftX()));
+      var y = Math.max(mapMinY + 36, Math.min(mapMaxY - 14, placement.y));
+      var poleTopY = y - 28;
+      var anchor = placement.anchor || 'start';
+      var nameText = mapLabel(item.name, 18);
+      var typeText = mapLabel(text(item.type) + ' - ' + text(item.status), 20);
+      var labelWidth = Math.max(116, Math.min(228, (Math.max(nameText.length, typeText.length) * 6.3) + 20));
+      var labelHeight = 34;
+      var effectiveAnchor = anchor;
+      if(effectiveAnchor === 'start' && (x + 22 + labelWidth) > mapMaxX){ effectiveAnchor = 'end'; }
+      else if(effectiveAnchor === 'end' && (x - 22 - labelWidth) < mapMinX){ effectiveAnchor = 'start'; }
+      else if(effectiveAnchor === 'middle'){
+        if((x + (labelWidth / 2)) > mapMaxX){ effectiveAnchor = 'end'; }
+        else if((x - (labelWidth / 2)) < mapMinX){ effectiveAnchor = 'start'; }
+      }
+      var labelBlockX = effectiveAnchor === 'start' ? x + 22 : (effectiveAnchor === 'end' ? x - labelWidth - 22 : x - (labelWidth / 2));
+      var labelBlockY = poleTopY + placement.labelDy - 14;
+      labelBlockX = Math.max(mapMinX, Math.min(mapMaxX - labelWidth, labelBlockX));
+      labelBlockY = Math.max(mapMinY, Math.min(mapMaxY - labelHeight, labelBlockY));
+      var textAnchor = effectiveAnchor === 'start' ? 'start' : (effectiveAnchor === 'end' ? 'end' : 'middle');
+      var textBaseX = textAnchor === 'start' ? labelBlockX + 8 : (textAnchor === 'end' ? labelBlockX + labelWidth - 8 : labelBlockX + (labelWidth / 2));
+      var textNameY = labelBlockY + 12;
+      var textMetaY = labelBlockY + 24;
+      var connectorX = effectiveAnchor === 'start' ? x + placement.connectorDx : (effectiveAnchor === 'end' ? x - placement.connectorDx : x);
+      var connectorY = poleTopY + placement.connectorDy;
+      var connectorEdgeX = effectiveAnchor === 'start' ? labelBlockX : (effectiveAnchor === 'end' ? labelBlockX + labelWidth : labelBlockX + (labelWidth / 2));
+      var connectorEdgeY = labelBlockY + (labelHeight / 2);
+      var markup = '';
+      markup += '<g class="tower-marker status-' + statusClass(item.status) + '">';
+      markup += '<line class="tower-line" x1="' + x + '" y1="' + poleTopY + '" x2="' + x + '" y2="' + (y+12) + '"></line>';
+      markup += '<line class="tower-wave" x1="' + (x-10) + '" y1="' + (y-22) + '" x2="' + x + '" y2="' + poleTopY + '"></line>';
+      markup += '<line class="tower-wave" x1="' + (x+10) + '" y1="' + (y-22) + '" x2="' + x + '" y2="' + poleTopY + '"></line>';
+      markup += '<path class="tower-callout" d="M ' + x + ' ' + poleTopY + ' L ' + connectorX + ' ' + connectorY + ' L ' + connectorEdgeX + ' ' + connectorEdgeY + '"></path>';
+      markup += '<circle class="tower-pulse" cx="' + x + '" cy="' + poleTopY + '" r="9"></circle>';
+      markup += '<circle class="tower-top" cx="' + x + '" cy="' + poleTopY + '" r="7"></circle>';
+      markup += '<rect class="tower-base" x="' + (x-9) + '" y="' + (y+12) + '" width="18" height="10" rx="4"></rect>';
+      markup += '<rect class="tower-tag" x="' + labelBlockX + '" y="' + labelBlockY + '" width="' + labelWidth + '" height="' + labelHeight + '" rx="11"></rect>';
+      markup += '<text class="tower-label" x="' + textBaseX + '" y="' + textNameY + '" text-anchor="' + textAnchor + '">' + nameText + '</text>';
+      markup += '<text class="tower-type" x="' + textBaseX + '" y="' + textMetaY + '" text-anchor="' + textAnchor + '">' + typeText + '</text>';
+      markup += '</g>';
+      layer.insertAdjacentHTML('beforeend', markup);
+    });
+  }
+
+  function renderRegistry(){
+    var list = document.getElementById('towerRegistry');
+    if(!towers.length){
+      list.innerHTML = '<div class="empty">No towers are registered yet. Add the first tower to start the dashboard.</div>';
+      return;
+    }
+    function locationText(item){
+      var parts = [];
+      if(item.city){ parts.push(text(item.city)); }
+      if(item.province && (!item.city || text(item.province).toLowerCase() !== text(item.city).toLowerCase())){ parts.push(text(item.province)); }
+      return parts.join(', ');
+    }
+    list.innerHTML = towers.map(function(item){
+      var location = [locationText(item), text(item.region)].filter(Boolean).join(' - ');
+      var locationMeta = location ? location + ' - ' : '';
+      return '<article class="registry-item"><div class="registry-top"><div class="registry-copy"><div class="registry-name">' + text(item.name) + '</div><div class="registry-meta">' + text(item.type) + ' - ' + locationMeta + text(item.zone) + ' - ' + text(item.signal) + '% signal</div></div>' + badge(item.status) + '</div><div class="registry-contact">Last check-in: ' + formatContact(item.contact) + '</div><div class="registry-actions"><button type="button" class="secondary edit-btn" data-id="' + text(item.id) + '">Edit</button><button type="button" class="secondary delete-btn" data-id="' + text(item.id) + '">Delete</button></div></article>';
+    }).join('');
+    syncFrameHeight();
+  }
+
+  function showToast(message, tone){
+    var stack = document.getElementById('toastStack');
+    try {
+      if(window.parent && window.parent !== window){
+        var parentDoc = window.parent.document;
+        var parentHead = parentDoc.head || parentDoc.getElementsByTagName('head')[0];
+        var style = parentDoc.getElementById('towers-host-toast-style');
+        if(!style && parentHead){
+          style = parentDoc.createElement('style');
+          style.id = 'towers-host-toast-style';
+          style.textContent = '#towersHostToastStack{position:fixed;left:12px;right:12px;display:flex;flex-direction:column;gap:10px;z-index:2147483647;pointer-events:none;width:auto;max-width:360px;margin:0 auto}#towersHostToastStack .toast{opacity:0;transform:translateY(12px);transition:opacity .2s ease,transform .2s ease;padding:12px 14px;border-radius:16px;background:rgba(8,18,36,.96);border:1px solid rgba(110,182,255,.18);box-shadow:0 18px 40px rgba(0,0,0,.34);color:#e9f6ff;font-size:13px;line-height:1.4}#towersHostToastStack .toast.is-visible{opacity:1;transform:translateY(0)}#towersHostToastStack .toast.toast-success{border-color:rgba(82,243,198,.28);box-shadow:0 18px 40px rgba(0,0,0,.34),0 0 0 1px rgba(82,243,198,.08)}#towersHostToastStack .toast.toast-error{border-color:rgba(255,126,126,.32);box-shadow:0 18px 40px rgba(0,0,0,.34),0 0 0 1px rgba(255,126,126,.1);color:#ffd7d7}';
+          parentHead.appendChild(style);
+        }
+        var hostStack = parentDoc.getElementById('towersHostToastStack');
+        if(!hostStack && parentDoc.body){
+          hostStack = parentDoc.createElement('div');
+          hostStack.id = 'towersHostToastStack';
+          parentDoc.body.appendChild(hostStack);
+        }
+        if(hostStack){
+          hostStack.style.bottom = isCompactLayout() ? 'calc(14px + env(safe-area-inset-bottom,0px))' : 'calc(16px + env(safe-area-inset-bottom,0px))';
+          stack = hostStack;
+        }
+      }
+    } catch(e){}
+    var toast = document.createElement('div');
+    toast.className = 'toast toast-' + (tone || 'success');
+    toast.textContent = message;
+    stack.appendChild(toast);
+    window.requestAnimationFrame(function(){
+      toast.classList.add('is-visible');
+    });
+    window.setTimeout(function(){
+      toast.classList.remove('is-visible');
+      window.setTimeout(function(){
+        if(toast.parentNode){ toast.parentNode.removeChild(toast); }
+      }, 220);
+    }, 2400);
+  }
+
+  function resetForm(){
+    var nowParts = nowLocalParts();
+    document.getElementById('towerId').value = '';
+    document.getElementById('towerName').value = '';
+    document.getElementById('towerType').value = 'Macro';
+    document.getElementById('towerStatus').value = 'Online';
+    document.getElementById('towerZone').value = 'Luzon';
+    syncLocationInputs('', '', '');
+    document.getElementById('towerSignal').value = '';
+    document.getElementById('towerContactDate').value = nowParts.date;
+    document.getElementById('towerContactTime').value = nowParts.time;
+    document.getElementById('saveTower').textContent = 'Add Tower';
+  }
+
+  function editTower(id){
+    var item = towers.find(function(entry){ return entry.id === id; });
+    if(!item){ return; }
+    document.getElementById('towerId').value = item.id;
+    document.getElementById('towerName').value = item.name;
+    document.getElementById('towerType').value = item.type;
+    document.getElementById('towerStatus').value = item.status;
+    document.getElementById('towerZone').value = item.zone;
+    syncLocationInputs(item.region || '', item.province || '', item.city || '');
+    document.getElementById('towerSignal').value = item.signal;
+    var contactParts = splitContactParts(item.contact || '');
+    document.getElementById('towerContactDate').value = contactParts.date || nowLocalParts().date;
+    document.getElementById('towerContactTime').value = contactParts.time || '';
+    document.getElementById('saveTower').textContent = 'Update Tower';
+    if(isCompactLayout()){
+      var opsPanel = document.querySelector('.ops-panel');
+      var towerName = document.getElementById('towerName');
+      if(opsPanel){ opsPanel.scrollIntoView({ behavior:'smooth', block:'start' }); }
+      window.setTimeout(function(){
+        try {
+          towerName.focus({ preventScroll:true });
+          towerName.select();
+        } catch(e){}
+      }, 320);
+    }
+    syncFrameHeight();
+  }
+
+  function removeTower(id){
+    var item = towers.find(function(entry){ return entry.id === id; });
+    towers = towers.filter(function(entry){ return entry.id !== id; });
+    saveState();
+    renderAll();
+    if(document.getElementById('towerId').value === id){ resetForm(); }
+    showToast((item ? item.name : 'Tower') + ' deleted successfully.');
+  }
+
+  function collectForm(){
+    var id = document.getElementById('towerId').value || ('TWR-' + Date.now());
+    var name = document.getElementById('towerName').value.trim();
+    var type = document.getElementById('towerType').value;
+    var status = document.getElementById('towerStatus').value;
+    var zone = document.getElementById('towerZone').value;
+    var region = document.getElementById('towerRegion').value;
+    var province = document.getElementById('towerProvince').value;
+    var city = document.getElementById('towerCity').value;
+    var signal = Math.max(0, Math.min(100, Number(document.getElementById('towerSignal').value || 0)));
+    var contactDate = document.getElementById('towerContactDate').value || nowLocalParts().date;
+    var contactTime = document.getElementById('towerContactTime').value || '';
+    var contact = combineContactParts(contactDate, contactTime);
+    if(!name){
+      showToast('Tower name is required.', 'error');
+      return null;
+    }
+    if(!region){
+      showToast('Region is required.', 'error');
+      return null;
+    }
+    if(!province){
+      showToast('Province is required.', 'error');
+      return null;
+    }
+    var location = resolveLocation(zone, region, province, city);
+    if(!location){
+      showToast('Choose a valid province and, if used, a matching city or municipality to place the tower correctly on the map.', 'error');
+      return null;
+    }
+    return { id:id, name:name, type:type, city:location.city, province:location.province, region:location.region, status:status, zone:zone, lat:location.lat, lon:location.lon, signal:signal, contact:contact };
+  }
+
+  function upsert(){
+    var item = collectForm();
+    if(!item){ return; }
+    var index = towers.findIndex(function(entry){ return entry.id === item.id; });
+    if(index >= 0){ towers[index] = item; }
+    else { towers.unshift(item); }
+    saveState();
+    renderAll();
+    resetForm();
+    showToast(index >= 0 ? (item.name + ' updated successfully.') : (item.name + ' added successfully.'));
+  }
+
+  function populateZoneModal(name){
+    var modal = document.getElementById('zoneModal');
+    var meta = zoneMeta[name];
+    var summary = zoneSummary(name);
+    modal.setAttribute('data-zone', name);
+    document.getElementById('modalEyebrow').textContent = name + ' Coverage Zone';
+    document.getElementById('modalTitle').textContent = name;
+    document.getElementById('modalCopy').textContent = meta.copy;
+    document.getElementById('modalStats').innerHTML =
+      '<div class="modal-stat"><span>Registered Towers</span><strong>' + summary.total + '</strong></div>' +
+      '<div class="modal-stat"><span>Average Signal</span><strong>' + summary.avgSignal + '%</strong></div>' +
+      '<div class="modal-stat"><span>Online</span><strong>' + summary.online + '</strong></div>' +
+      '<div class="modal-stat"><span>Primary Type</span><strong>' + summary.primaryType + '</strong></div>';
+    document.getElementById('modalFocus').innerHTML = summary.strongest ?
+      '<div class="modal-focus-title">Highest Signal Tower</div><div class="modal-focus-name">' + text(summary.strongest.name) + '</div><div class="modal-focus-meta">' + text(summary.strongest.type) + ' | ' + text(summary.strongest.status) + ' | ' + text(summary.strongest.signal) + '% signal<br>Last check-in: ' + formatContact(summary.strongest.contact) + '</div>' :
+      '<div class="modal-focus-title">Zone Status</div><div class="modal-focus-meta">No towers are currently registered for this zone.</div>';
+  }
+
+  function openZoneModal(name){
+    var modal = document.getElementById('zoneModal');
+    populateZoneModal(name);
+    modal.hidden = false;
+    document.documentElement.classList.add('modal-open');
+    document.body.classList.add('modal-open');
+    lockLocalModalScroll();
+    lockModalViewport();
+    Array.prototype.forEach.call(document.querySelectorAll('.zone-hotspot'), function(node){
+      node.classList.toggle('is-active', node.getAttribute('data-zone') === name);
+    });
+  }
+
+  function closeZoneModal(){
+    var modal = document.getElementById('zoneModal');
+    modal.hidden = true;
+    document.documentElement.classList.remove('modal-open');
+    document.body.classList.remove('modal-open');
+    unlockModalViewport();
+    unlockLocalModalScroll();
+    Array.prototype.forEach.call(document.querySelectorAll('.zone-hotspot'), function(node){
+      node.classList.remove('is-active');
+    });
+  }
+  function preventModalScroll(event){
+    if(document.body.classList.contains('modal-open') && event.cancelable){
+      event.preventDefault();
+    }
+  }
+
+  function zoneTarget(node){
+    while(node && node !== document.body){
+      if(node.getAttribute && node.getAttribute('data-zone')){ return node; }
+      node = node.parentNode;
+    }
+    return null;
+  }
+
+  var lastZoneActivationAt = 0;
+  var lastZoneActivationName = '';
+  function activateZone(event){
+    var target = zoneTarget(event.target);
+    if(!target){ return; }
+    var zone = target.getAttribute('data-zone');
+    var now = Date.now();
+    var isDirectTouch = event.type === 'pointerup' || event.type === 'touchend';
+    if(zone === lastZoneActivationName && (now - lastZoneActivationAt) < 350){
+      if(isDirectTouch && event.cancelable){ event.preventDefault(); }
+      return;
+    }
+    if(event.type === 'click' && (now - lastZoneActivationAt) < 450){ return; }
+    if(isDirectTouch && event.cancelable){ event.preventDefault(); }
+    lastZoneActivationAt = now;
+    lastZoneActivationName = zone;
+    openZoneModal(zone);
+  }
+
+  function bind(){
+    document.getElementById('saveTower').addEventListener('click', upsert);
+    document.getElementById('resetTower').addEventListener('click', resetForm);
+    document.getElementById('towerRegistry').addEventListener('click', function(event){
+      var button = event.target.closest('button');
+      if(!button){ return; }
+      var id = button.getAttribute('data-id');
+      if(button.classList.contains('edit-btn')){ editTower(id); }
+      if(button.classList.contains('delete-btn')){ removeTower(id); }
+    });
+    document.getElementById('zoneLayer').addEventListener('click', activateZone);
+    document.getElementById('zoneLayer').addEventListener('pointerup', function(event){
+      if(event.pointerType && event.pointerType === 'mouse'){ return; }
+      activateZone(event);
+    });
+    document.getElementById('zoneLayer').addEventListener('touchend', activateZone, { passive:false });
+    document.getElementById('zoneLayer').addEventListener('keydown', function(event){
+      var target = zoneTarget(event.target);
+      if(!target){ return; }
+      if(event.key === 'Enter' || event.key === ' '){
+        event.preventDefault();
+        openZoneModal(target.getAttribute('data-zone'));
+      }
+    });
+    document.getElementById('towerZone').addEventListener('change', function(){
+      populateRegionOptions(this.value, '');
+      populateProvinceOptions(this.value, '', '');
+      populateCityOptions(this.value, '', '', '');
+    });
+    document.getElementById('towerRegion').addEventListener('change', function(){
+      populateProvinceOptions(document.getElementById('towerZone').value, this.value, '');
+      populateCityOptions(document.getElementById('towerZone').value, this.value, '', '');
+    });
+    document.getElementById('towerProvince').addEventListener('change', function(){
+      populateCityOptions(document.getElementById('towerZone').value, document.getElementById('towerRegion').value, this.value, '');
+    });
+    document.getElementById('zoneModal').addEventListener('click', function(event){
+      if(event.target.getAttribute('data-close-modal') === 'true'){ closeZoneModal(); }
+    });
+    document.getElementById('closeZoneModal').addEventListener('click', closeZoneModal);
+    window.addEventListener('keydown', function(event){ if(event.key === 'Escape'){ closeZoneModal(); } });
+    document.addEventListener('touchmove', preventModalScroll, { passive:false });
+    document.addEventListener('wheel', preventModalScroll, { passive:false });
+    window.addEventListener('resize', function(){ tidyHostChrome(); syncFrameHeight(); });
+  }
+
+  function renderAll(){
+    renderKpis();
+    renderZones();
+    renderMap();
+    renderRegistry();
+    var modal = document.getElementById('zoneModal');
+    if(!modal.hidden && modal.getAttribute('data-zone')){ populateZoneModal(modal.getAttribute('data-zone')); }
+    syncFrameHeight();
+  }
+
+  tidyHostChrome();
+  window.setTimeout(tidyHostChrome, 0);
+  window.setTimeout(tidyHostChrome, 250);
+  window.setTimeout(tidyHostChrome, 1000);
+  loadState();
+  bind();
+  resetForm();
+  renderAll();
+})();
+</script>
+</body>
+</html>
+
